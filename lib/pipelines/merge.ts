@@ -1,0 +1,68 @@
+import { anthropic } from "@/lib/anthropic";
+import { buildMergePrompt } from "@/lib/prompts/merge";
+import type { ExtractedEntity, MergedEntity } from "@/lib/vault/types";
+
+/**
+ * Merge and deduplicate extracted entities using Claude Sonnet.
+ */
+export async function mergeEntities(
+  entities: ExtractedEntity[]
+): Promise<{ entities: MergedEntity[]; user_name: string | null }> {
+  if (entities.length === 0) {
+    return { entities: [], user_name: null };
+  }
+
+  // If few entities, skip merge step
+  if (entities.length <= 5) {
+    return { entities, user_name: null };
+  }
+
+  const prompt = buildMergePrompt(entities);
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 8192,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "";
+
+    // Extract JSON object from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Merge: no JSON in response");
+      return { entities, user_name: null };
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      entities?: unknown[];
+      user_name?: string | null;
+    };
+
+    if (!parsed.entities || !Array.isArray(parsed.entities)) {
+      return { entities, user_name: parsed.user_name || null };
+    }
+
+    const mergedEntities = parsed.entities.filter(
+      (e): e is MergedEntity =>
+        typeof e === "object" &&
+        e !== null &&
+        typeof (e as MergedEntity).type === "string" &&
+        typeof (e as MergedEntity).slug === "string" &&
+        typeof (e as MergedEntity).title === "string" &&
+        typeof (e as MergedEntity).content === "string" &&
+        Array.isArray((e as MergedEntity).links) &&
+        Array.isArray((e as MergedEntity).tags)
+    );
+
+    return {
+      entities: mergedEntities,
+      user_name: typeof parsed.user_name === "string" ? parsed.user_name : null,
+    };
+  } catch (error) {
+    console.error("Entity merge failed:", error);
+    return { entities, user_name: null };
+  }
+}

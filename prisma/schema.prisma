@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  clerkId            String         @unique
+  email              String         @unique
+  name               String?
+  vaultPath          String
+  onboardingComplete Boolean        @default(false)
+  importStatus       String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  conversations      Conversation[]
+  simulations        Simulation[]
+  vaultFiles         VaultFile[]
+  settings           UserSettings?
+}
+
+model UserSettings {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id])
+  preferredModel String  @default("claude-sonnet-4-6")
+  memoryEnabled  Boolean @default(true)
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String?
+  mode      String   @default("chat")
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VaultFile {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  path      String   // e.g. "_index.md", "people/alice.md"
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, path])
+  @@index([userId])
+}
+
+model Simulation {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  title            String
+  scenario         String
+  narrative        String?
+  timeHorizonYears Int
+  status           String   @default("pending")
+  // "pending" | "generating_lenses" | "ready_to_run" | "running"
+  // | "generating_report" | "complete" | "failed"
+  lenses           Json     @default("[]")
+  runs             Json     @default("[]")
+  report           Json?
+  error            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
