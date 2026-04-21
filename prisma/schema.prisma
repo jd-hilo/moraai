@@ -14,12 +14,33 @@ model User {
   vaultPath          String
   onboardingComplete Boolean        @default(false)
   importStatus       String?
+  // Weekly credit allotment. 1 credit = $0.01 of API spend.
+  // 500 credits = $5/week budget.
+  credits            Int            @default(500)
+  creditsResetAt     DateTime       @default(now())
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   conversations      Conversation[]
   simulations        Simulation[]
   vaultFiles         VaultFile[]
+  usageEvents        UsageEvent[]
   settings           UserSettings?
+}
+
+/// Ledger of every LLM call for observability + debugging.
+/// Lets us see what a user actually spent credits on.
+model UsageEvent {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action       String   // "chat" | "import" | "simulation.lens" | "simulation.run" | ...
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  credits      Int      // credits charged for this event
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model UserSettings {

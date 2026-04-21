@@ -19,6 +19,7 @@ export async function runLensSimulation(params: {
   narrative: string;
   lens: Possibility;
   timeHorizonYears: number;
+  userId?: string;
 }): Promise<PossibilitySimulationResult> {
   const prompt = buildLensRunPrompt(
     params.userName,
@@ -39,6 +40,8 @@ export async function runLensSimulation(params: {
     system: twinIdentity,
     prompt,
     maxTokens: 1200,
+    userId: params.userId,
+    action: "simulation.run",
   });
 
   return parsePossibilityOutput(raw.trim());

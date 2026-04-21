@@ -29,7 +29,7 @@ export async function runImportPipeline(
   const allEntities: ExtractedEntity[] = [];
   const extractionPromises = batches.map(async (batch, i) => {
     onProgress(`Extracting knowledge from batch ${i + 1}/${batches.length}...`);
-    const entities = await extractEntitiesFromBatch(batch);
+    const entities = await extractEntitiesFromBatch(batch, userId);
     return entities;
   });
 
@@ -41,7 +41,7 @@ export async function runImportPipeline(
   onProgress(`Extracted ${allEntities.length} entities. Merging duplicates...`);
 
   // 3. Merge entities
-  const { entities: mergedEntities, user_name } = await mergeEntities(allEntities);
+  const { entities: mergedEntities, user_name } = await mergeEntities(allEntities, userId);
 
   onProgress(
     `Merged into ${mergedEntities.length} unique entities.${user_name ? ` Hello, ${user_name}.` : ""}`

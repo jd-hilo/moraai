@@ -12,6 +12,7 @@ export async function generateLenses(params: {
   scenario: string;
   narrative: string | null;
   timeHorizonYears: number;
+  userId?: string;
 }): Promise<Possibility[]> {
   const prompt = buildLensGenerationPrompt(
     params.userName,
@@ -26,6 +27,8 @@ export async function generateLenses(params: {
     openaiModel: "gpt-4o",
     prompt,
     maxTokens: 2000,
+    userId: params.userId,
+    action: "simulation.lens",
   });
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);

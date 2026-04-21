@@ -15,6 +15,7 @@ export async function generateReport(params: {
   lenses: Possibility[];
   runs: PossibilityRun[];
   timeHorizonYears: number;
+  userId?: string;
 }): Promise<SimulationReport> {
   const prompt = buildReportSynthesisPrompt(
     params.userName,
@@ -28,12 +29,17 @@ export async function generateReport(params: {
 
   const orchestratorSystem = "You are a senior career intelligence orchestrator. You have received simulation outputs from 10 digital twin agents who each ran a distinct possible future. Your job is to synthesise their findings into a single authoritative career projection — analytically rigorous, honest, and actionable.";
 
+  // Use Sonnet instead of Opus — Opus is 5x more expensive and the quality
+  // delta isn't worth it for this synthesis task. Keeps the per-simulation
+  // cost within the $5/week free-tier budget.
   const text = await callLLM({
-    anthropicModel: "claude-opus-4-6",
+    anthropicModel: "claude-sonnet-4-6",
     openaiModel: "gpt-4o",
     system: orchestratorSystem,
     prompt,
     maxTokens: 2500,
+    userId: params.userId,
+    action: "simulation.report",
   });
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);

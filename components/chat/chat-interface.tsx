@@ -177,6 +177,15 @@ export function ChatInterface({ conversationId, initialMode }: ChatInterfaceProp
         });
 
         if (!response.ok) {
+          // 402 = out of credits — render a friendlier message.
+          if (response.status === 402) {
+            const body = await response.json().catch(() => ({} as { resetsAt?: string }));
+            const resetsAt = body?.resetsAt ? new Date(body.resetsAt) : null;
+            const label = resetsAt
+              ? `Your credits reset ${resetsAt.toLocaleDateString(undefined, { weekday: "long" })}.`
+              : "Your credits reset weekly.";
+            throw new Error(`You've used up this week's credits. ${label}`);
+          }
           const errBody = await response.text().catch(() => "");
           throw new Error(`Chat request failed (${response.status}): ${errBody}`);
         }

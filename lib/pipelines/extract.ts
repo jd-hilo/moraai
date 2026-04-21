@@ -1,12 +1,18 @@
 import { anthropic } from "@/lib/anthropic";
 import { buildExtractionPrompt } from "@/lib/prompts/extraction";
+import { chargeUsage } from "@/lib/credits";
 import type { ParsedConversation, ExtractedEntity } from "@/lib/vault/types";
 
+const MODEL = "claude-haiku-4-5-20251001";
+
 /**
- * Extract entities from a batch of conversations using Claude Sonnet.
+ * Extract entities from a batch of conversations using Claude Haiku.
+ * When `userId` is supplied, the call's token usage is charged against the
+ * user's weekly credit balance.
  */
 export async function extractEntitiesFromBatch(
-  conversations: ParsedConversation[]
+  conversations: ParsedConversation[],
+  userId?: string
 ): Promise<ExtractedEntity[]> {
   if (conversations.length === 0) return [];
 
@@ -14,10 +20,23 @@ export async function extractEntitiesFromBatch(
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: MODEL,
       max_tokens: 8192,
       messages: [{ role: "user", content: prompt }],
     });
+
+    // Charge credits for this call (fire-and-forget; don't block on billing).
+    if (userId) {
+      chargeUsage({
+        userId,
+        action: "import.extract",
+        model: MODEL,
+        inputTokens: response.usage?.input_tokens ?? 0,
+        outputTokens: response.usage?.output_tokens ?? 0,
+      }).catch((err) =>
+        console.error("[credits] extract charge failed:", err)
+      );
+    }
 
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";

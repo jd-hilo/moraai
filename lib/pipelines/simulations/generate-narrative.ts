@@ -12,6 +12,7 @@ export async function generateNarrative(params: {
   scenario: string;
   lenses: Possibility[];
   timeHorizonYears: number;
+  userId?: string;
 }): Promise<string> {
   const prompt = buildNarrativeGenerationPrompt(
     params.userName,
@@ -26,6 +27,8 @@ export async function generateNarrative(params: {
     openaiModel: "gpt-4o",
     prompt,
     maxTokens: 2000,
+    userId: params.userId,
+    action: "simulation.narrative",
   });
 
   return text.trim();

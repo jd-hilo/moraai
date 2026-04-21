@@ -11,6 +11,71 @@ interface Conversation {
   preview: string;
 }
 
+interface CreditsInfo {
+  credits: number;
+  weeklyCredits: number;
+  resetsAt: string;
+}
+
+/** Tiny badge at the bottom of the sidebar showing weekly credit balance. */
+function CreditBadge() {
+  const pathname = usePathname();
+  const [info, setInfo] = useState<CreditsInfo | null>(null);
+
+  useEffect(() => {
+    fetch("/api/credits")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setInfo(data))
+      .catch(() => setInfo(null));
+  }, [pathname]);
+
+  if (!info) return null;
+  const pct = Math.max(0, Math.min(100, (info.credits / info.weeklyCredits) * 100));
+  const low = pct < 20;
+
+  // Format reset date as "resets Sun" or "in 2d"
+  const resetsAt = new Date(info.resetsAt);
+  const daysAway = Math.max(
+    0,
+    Math.ceil((resetsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+  );
+  const resetLabel = daysAway <= 0 ? "resets soon" : daysAway === 1 ? "resets in 1 day" : `resets in ${daysAway} days`;
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px 14px",
+        borderTop: "1px solid #ececec",
+        flexShrink: 0,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#0d0d0d", letterSpacing: "0.02em" }}>
+          {info.credits} credits
+        </span>
+        <span style={{ fontSize: 10, color: "#9ca3af" }}>{resetLabel}</span>
+      </div>
+      <div
+        style={{
+          height: 3,
+          borderRadius: 3,
+          backgroundColor: "#ececec",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            backgroundColor: low ? "#dc2626" : "#0d0d0d",
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 interface AppSidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -400,6 +465,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             </div>
           ))}
         </div>
+
+        <CreditBadge />
       </aside>
 
       <style>{`

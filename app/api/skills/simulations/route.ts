@@ -5,10 +5,16 @@ import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { loadSimulationContext } from "@/lib/skills/simulations/context-loader";
 import { generateLenses } from "@/lib/pipelines/simulations/generate-lenses";
 import { generateNarrative } from "@/lib/pipelines/simulations/generate-narrative";
+import { requireCredits, CreditsExhaustedError } from "@/lib/credits";
 import type {
   SimulationStatus,
   SimulationSummary,
 } from "@/lib/skills/simulations/types";
+
+// Rough minimum credit cost to start a new simulation (lens + narrative gen).
+// The run step has a separate check. Keeps a user with 5 credits from
+// starting a simulation they can't finish.
+const MIN_CREDITS_START_SIM = 20;
 
 /**
  * GET /api/skills/simulations
@@ -54,6 +60,23 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await getOrCreateUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Gate: must have enough credits for lens + narrative generation.
+  try {
+    await requireCredits(user.id, MIN_CREDITS_START_SIM);
+  } catch (err) {
+    if (err instanceof CreditsExhaustedError) {
+      return Response.json(
+        {
+          error: `Need at least ${MIN_CREDITS_START_SIM} credits to start a simulation.`,
+          credits: err.credits,
+          resetsAt: err.creditsResetAt.toISOString(),
+        },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   let body: unknown;
   try {
@@ -138,6 +161,7 @@ async function kickoffLensGeneration(userId: string, simulationId: string): Prom
     scenario: sim.scenario,
     narrative: sim.narrative,
     timeHorizonYears: sim.timeHorizonYears,
+    userId,
   });
 
   // If user didn't supply a narrative, generate one now.
@@ -149,6 +173,7 @@ async function kickoffLensGeneration(userId: string, simulationId: string): Prom
       scenario: sim.scenario,
       lenses: possibilities,
       timeHorizonYears: sim.timeHorizonYears,
+      userId,
     });
   }
 

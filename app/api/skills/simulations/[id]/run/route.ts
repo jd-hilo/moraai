@@ -1,10 +1,16 @@
+import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/get-or-create-user";
 import { loadSimulationContext } from "@/lib/skills/simulations/context-loader";
 import { runLensSimulation } from "@/lib/pipelines/simulations/run-lens-simulation";
 import { generateReport } from "@/lib/pipelines/simulations/generate-report";
+import { requireCredits, CreditsExhaustedError } from "@/lib/credits";
 import type { Possibility, PossibilityRun } from "@/lib/skills/simulations/types";
+
+// Rough cost of running a full simulation (10 lens runs + report).
+// A simulation with 10 possibilities + Sonnet report is ~40 credits.
+const MIN_CREDITS_RUN_SIM = 40;
 
 /**
  * POST /api/skills/simulations/[id]/run
@@ -21,6 +27,23 @@ export async function POST(
 
   const user = await getOrCreateUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Gate: must have enough credits to run all lenses + report.
+  try {
+    await requireCredits(user.id, MIN_CREDITS_RUN_SIM);
+  } catch (err) {
+    if (err instanceof CreditsExhaustedError) {
+      return Response.json(
+        {
+          error: `Need at least ${MIN_CREDITS_RUN_SIM} credits to run a simulation.`,
+          credits: err.credits,
+          resetsAt: err.creditsResetAt.toISOString(),
+        },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   const sim = await prisma.simulation.findUnique({
     where: { id, userId: user.id },
@@ -55,15 +78,22 @@ export async function POST(
     },
   });
 
-  // Fire-and-forget: parallel lens runs + final report.
-  void executeSimulation(user.id, id).catch((err) => {
-    console.error(`[simulations] run failed for ${id}:`, err);
-    prisma.simulation
-      .update({
-        where: { id },
-        data: { status: "failed", error: (err as Error).message },
-      })
-      .catch(() => {});
+  // Run in background via next/server `after` so the response returns
+  // immediately but the async work still executes reliably on Vercel.
+  const userId = user.id;
+  const simId = id;
+  after(async () => {
+    try {
+      await executeSimulation(userId, simId);
+    } catch (err) {
+      console.error(`[simulations] run failed for ${simId}:`, err);
+      await prisma.simulation
+        .update({
+          where: { id: simId },
+          data: { status: "failed", error: (err as Error).message },
+        })
+        .catch(() => {});
+    }
   });
 
   return Response.json({ ok: true });
@@ -104,6 +134,7 @@ async function executeSimulation(userId: string, simulationId: string): Promise<
         narrative,
         lens: possibility,
         timeHorizonYears: sim.timeHorizonYears,
+        userId,
       });
       await patchRun(simulationId, possibility.id, {
         status: "complete",
@@ -152,6 +183,7 @@ async function executeSimulation(userId: string, simulationId: string): Promise<
     lenses: possibilities,
     runs,
     timeHorizonYears: freshSim.timeHorizonYears,
+    userId,
   });
 
   await prisma.simulation.update({

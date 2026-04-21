@@ -8,6 +8,7 @@ import { buildChatSystemPrompt } from "@/lib/prompts/chat-system";
 import { truncateToTokens } from "@/lib/utils";
 import { streamChat } from "@/lib/providers/stream";
 import { getDefaultModel, getModel } from "@/lib/models";
+import { requireCredits, chargeUsage, CreditsExhaustedError } from "@/lib/credits";
 import type { Message } from "@/lib/vault/types";
 
 export async function POST(request: Request) {
@@ -16,6 +17,23 @@ export async function POST(request: Request) {
     const user = await getOrCreateUser();
     if (!user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Check credits (weekly $5 budget). Reject if empty.
+    try {
+      await requireCredits(user.id, 1);
+    } catch (err) {
+      if (err instanceof CreditsExhaustedError) {
+        return Response.json(
+          {
+            error: "Out of credits for this week.",
+            credits: err.credits,
+            resetsAt: err.creditsResetAt.toISOString(),
+          },
+          { status: 402 }
+        );
+      }
+      throw err;
     }
 
     // 3. Parse request body
@@ -126,6 +144,7 @@ export async function POST(request: Request) {
     // 9. Stream response via unified provider router
     const encoder = new TextEncoder();
     let fullAssistantContent = "";
+    let streamUsage: { inputTokens: number; outputTokens: number; model: string } | null = null;
 
     const readableStream = new ReadableStream({
       async start(controller) {
@@ -134,12 +153,27 @@ export async function POST(request: Request) {
             modelId: chosenModel.id,
             system: systemPrompt,
             messages: providerMessages,
+            onUsage: (u) => {
+              streamUsage = u;
+            },
           })) {
             fullAssistantContent += textChunk;
             controller.enqueue(encoder.encode(textChunk));
           }
 
           controller.close();
+
+          // Charge credits for this chat turn based on real token usage.
+          if (streamUsage) {
+            const u = streamUsage as { inputTokens: number; outputTokens: number; model: string };
+            chargeUsage({
+              userId: user.id,
+              action: "chat",
+              model: u.model,
+              inputTokens: u.inputTokens,
+              outputTokens: u.outputTokens,
+            }).catch((err) => console.error("[credits] charge failed:", err));
+          }
 
           // 10. Save assistant message after stream completes
           const assistantMessage: Message = {
