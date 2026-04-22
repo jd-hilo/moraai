@@ -646,7 +646,7 @@ export default function LandingPage() {
             }}
           >
             <MoraOrb size={10} />
-            Your personal AI — for life
+            Free for the first 500 users · Limited time
           </div>
 
           <h1
@@ -703,7 +703,7 @@ export default function LandingPage() {
           </Link>
 
           <p style={{ marginTop: 16, fontSize: 13, color: "#8a8a9a" }}>
-            Free to try · Private by design
+            Free for first 500 users · No credit card · Private by design
           </p>
         </div>
       </section>
