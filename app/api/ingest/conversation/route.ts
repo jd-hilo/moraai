@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { triggerPostChatIngest } from "@/lib/pipelines/post-chat-ingest";
@@ -33,10 +34,16 @@ export async function POST(request: Request) {
       return Response.json({ error: "Conversation not found" }, { status: 404 });
     }
 
-    // Trigger async ingest
-    triggerPostChatIngest(user.id, conversationId).catch((err) =>
-      console.error("Post-chat ingest error:", err)
-    );
+    // Trigger async ingest after the response is sent.
+    // `after()` keeps the work alive on Vercel even after the lambda returns —
+    // without it, fire-and-forget gets killed mid-execution.
+    const uid = user.id;
+    const cid = conversationId;
+    after(async () => {
+      await triggerPostChatIngest(uid, cid).catch((err) =>
+        console.error("Post-chat ingest error:", err)
+      );
+    });
 
     return Response.json({ success: true, message: "Ingest triggered" });
   } catch (error) {
