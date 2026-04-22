@@ -263,6 +263,9 @@ const memoryCardStyles = `
   border-top: 1px solid rgba(0,0,0,0.06);
   padding: 10px 14px 12px;
   animation: mora-mem-expand 180ms ease;
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 @keyframes mora-mem-expand {
   from { opacity: 0; transform: translateY(-4px); }

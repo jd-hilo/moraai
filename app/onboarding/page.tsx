@@ -18,11 +18,11 @@ export default async function OnboardingPage() {
     redirect("/chat");
   }
 
-  // Account older than 10 minutes and still not complete → they abandoned it,
+  // Account older than 24 hours and still not complete → they abandoned it,
   // just send them to chat rather than forcing them back through onboarding.
   if (user?.createdAt) {
     const ageMs = Date.now() - new Date(user.createdAt).getTime();
-    if (ageMs > 10 * 60 * 1000) {
+    if (ageMs > 24 * 60 * 60 * 1000) {
       redirect("/chat");
     }
   }

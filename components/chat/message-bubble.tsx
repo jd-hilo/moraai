@@ -99,9 +99,11 @@ function MemoryDiffPanel({ changes }: { changes: MemoryUpdateChange[] }) {
     <div
       style={{
         position: "absolute",
-        bottom: "calc(100% + 8px)",
+        top: "calc(100% + 8px)",
         right: 0,
         width: 320,
+        maxHeight: 360,
+        overflowY: "auto",
         background: "#fff",
         border: "1px solid rgba(139,92,246,0.15)",
         borderRadius: 10,
