@@ -703,7 +703,7 @@ export default function LandingPage() {
           </Link>
 
           <p style={{ marginTop: 16, fontSize: 13, color: "#8a8a9a" }}>
-            Free for first 500 users · No credit card · Private by design
+            Sign up today to unlock 500 free credits · No credit card required
           </p>
         </div>
       </section>
@@ -999,8 +999,11 @@ export default function LandingPage() {
               }}
             >
               <SparkleIcon size={14} />
-              Get started — free
+              Unlock 500 free credits
             </Link>
+            <p style={{ marginTop: 14, fontSize: 13, color: "#a5a5b5" }}>
+              Sign up today · No credit card required
+            </p>
           </div>
         </Reveal>
 
