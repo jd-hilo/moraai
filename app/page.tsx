@@ -646,7 +646,7 @@ export default function LandingPage() {
             }}
           >
             <MoraOrb size={10} />
-            Free for the first 500 users · Limited time
+            Sign up today to unlock 500 free credits
           </div>
 
           <h1
@@ -703,7 +703,7 @@ export default function LandingPage() {
           </Link>
 
           <p style={{ marginTop: 16, fontSize: 13, color: "#8a8a9a" }}>
-            Sign up today to unlock 500 free credits · No credit card required
+            No credit card required
           </p>
         </div>
       </section>
