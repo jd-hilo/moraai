@@ -8,7 +8,7 @@ import { ProcessingScreen } from "./processing-screen";
 import { KnowledgeGraph } from "@/components/memory/knowledge-graph";
 
 type Source = "chatgpt" | "claude";
-type Step = "choose" | "processing" | "done";
+type Step = "choose" | "processing" | "done" | "error";
 
 const ORB_GRADIENT =
   "radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%)";
@@ -256,11 +256,13 @@ export function ImportWizard() {
   const [openModal, setOpenModal] = useState<Source | null>(null);
   const [progressMessages, setProgressMessages] = useState<string[]>([]);
   const [isComplete, setIsComplete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFile = useCallback(async (file: File, source: Source) => {
     setOpenModal(null);
     setStep("processing");
     setProgressMessages(["Starting import…"]);
+    setErrorMessage(null);
 
     try {
       const formData = new FormData();
@@ -268,7 +270,17 @@ export function ImportWizard() {
       formData.append("source", source);
 
       const response = await fetch("/api/ingest/import", { method: "POST", body: formData });
-      if (!response.ok) throw new Error("Import failed");
+      if (!response.ok) {
+        let msg = "Import failed";
+        try {
+          const data = await response.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        if (response.status === 402) {
+          throw new Error(msg || "Not enough credits to run an import.");
+        }
+        throw new Error(msg);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response body");
@@ -297,13 +309,95 @@ export function ImportWizard() {
       setStep("done");
     } catch (err) {
       console.error("Import error:", err);
-      setProgressMessages((p) => [...p, "Something went wrong. Please try again."]);
+      setErrorMessage(
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong while importing. Please try again."
+      );
+      setStep("error");
     }
+  }, []);
+
+  const resetToChoose = useCallback(() => {
+    setErrorMessage(null);
+    setProgressMessages([]);
+    setIsComplete(false);
+    setStep("choose");
   }, []);
 
   /* processing */
   if (step === "processing") {
     return <ProcessingScreen messages={progressMessages} isComplete={isComplete} />;
+  }
+
+  /* error */
+  if (step === "error") {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 24px",
+        background: "linear-gradient(180deg, #fafaf8 0%, #f5f0ff 60%, #fafaf8 100%)",
+      }}>
+        <div style={{
+          maxWidth: 460,
+          width: "100%",
+          textAlign: "center",
+          background: "#fff",
+          border: "1px solid rgba(0,0,0,0.06)",
+          borderRadius: 16,
+          padding: "32px 28px",
+          boxShadow: "0 6px 24px rgba(0,0,0,0.04)",
+        }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+            <MoraOrb size={48} />
+          </div>
+          <h2 style={{
+            fontFamily: "'Recoleta', 'DM Sans', serif",
+            fontSize: 24, fontWeight: 400,
+            color: "#0d0d0d", letterSpacing: "-0.02em",
+            margin: "0 0 10px",
+          }}>
+            Something went wrong.
+          </h2>
+          <p style={{ fontSize: 14, color: "#6b6b7a", lineHeight: 1.55, margin: "0 0 24px" }}>
+            {errorMessage ?? "We hit a snag while importing your conversations."}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button
+              onClick={resetToChoose}
+              style={{
+                padding: "12px 18px",
+                borderRadius: 10,
+                border: "none",
+                background: "#0d0d0d",
+                color: "#fff",
+                fontSize: 14, fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Try again
+            </button>
+            <button
+              onClick={() => router.replace("/chat")}
+              style={{
+                padding: "12px 18px",
+                borderRadius: 10,
+                border: "1px solid rgba(0,0,0,0.1)",
+                background: "transparent",
+                color: "#0d0d0d",
+                fontSize: 14, fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   /* done — show vault before proceeding */

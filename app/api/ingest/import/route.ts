@@ -5,6 +5,10 @@ import { runImportPipeline } from "@/lib/pipelines/import-pipeline";
 import { requireCredits, CreditsExhaustedError } from "@/lib/credits";
 import JSZip from "jszip";
 
+// Imports do many LLM calls in sequence; Vercel's default 10s ceiling is way
+// too short. 5 minutes is the Pro/Fluid hard cap.
+export const maxDuration = 300;
+
 // Ballpark credit cost of an import: tens of extract batches + 1 merge at
 // Haiku pricing. 90 credits keeps a user with a near-empty wallet from
 // starting an import they can't finish.
@@ -77,11 +81,21 @@ export async function POST(request: Request) {
       jsonData = JSON.parse(text);
     }
 
-    // Parse conversations based on source
-    const conversations =
+    // Parse conversations based on source, with auto-detect fallback so a
+    // mismatched source/file (e.g. uploading a ChatGPT-format file via the
+    // Claude flow) still works.
+    let conversations =
       source === "claude"
         ? parseClaudeExport(jsonData)
         : parseChatGPTExport(jsonData);
+
+    if (conversations.length === 0) {
+      const fallback =
+        source === "claude"
+          ? parseChatGPTExport(jsonData)
+          : parseClaudeExport(jsonData);
+      if (fallback.length > 0) conversations = fallback;
+    }
 
     if (conversations.length === 0) {
       return Response.json(
