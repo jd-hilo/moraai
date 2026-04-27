@@ -28,6 +28,12 @@ function friendlyMessage(raw: string): string {
     const match = raw.match(/(\d+) batches/);
     return match ? `Organising ${match[1]} groups of conversations…` : "Organising your conversations…";
   }
+  if (raw.includes("Capped to most recent")) {
+    const match = raw.match(/most recent (\d+) of (\d+)/);
+    if (match) {
+      return `Extracting your most recent ${match[1]} conversations (of ${match[2]})…`;
+    }
+  }
   if (raw.includes("Found") && raw.includes("conversations")) {
     const match = raw.match(/(\d+) conversations/);
     return match ? `Found ${match[1]} conversations — sit tight, this may take a minute.` : "Found your conversations…";
@@ -38,34 +44,44 @@ function friendlyMessage(raw: string): string {
 }
 
 /* ── Derive 0-100 progress from the raw message stream ───────────── */
+// Phase budget (roughly proportional to wall-clock time):
+//   start/parse:  0 → 6
+//   extraction:   6 → 60   (longest phase, parallel LLM calls)
+//   merging:     60 → 82   (one big LLM call, ~10–20s)
+//   generate:    82 → 90
+//   write S3:    90 → 97
+//   done:        100
 function deriveProgress(messages: string[], isComplete: boolean): number {
   if (isComplete) return 100;
   if (messages.length === 0) return 0;
 
   const last = messages[messages.length - 1];
 
-  if (last.includes("Done"))              return 100;
-  if (last.includes("Writing to storage")) return 92;
-  if (last.includes("Generated"))         return 86;
-  if (last.includes("Building your"))     return 80;
-  if (last.includes("Hello,") || last.includes("Merged into")) return 74;
-  if (last.includes("Merging duplicates") || last.includes("Extracted")) return 68;
+  if (last.includes("Done"))               return 100;
+  if (last.includes("Writing to storage")) return 90;
+  if (last.includes("Generated"))          return 86;
+  if (last.includes("Building your"))      return 82;
+  if (last.includes("Hello,") || last.includes("Merged into")) return 80;
+  if (last.includes("Merging duplicates") || last.includes("Extracted")) return 60;
 
   if (last.includes("Extracting knowledge from batch")) {
     const match = last.match(/batch (\d+)\/(\d+)/);
     if (match) {
       const n = parseInt(match[1]);
       const total = parseInt(match[2]);
-      // batches span 14% → 68%
-      return Math.round(14 + (n / total) * 54);
+      // Each "batch N/M" message fires when that batch *starts*; treat it
+      // as (n-1)/total complete so the bar doesn't jump to 100% of the
+      // extraction phase before the last batch finishes.
+      const frac = Math.max(0, (n - 1) / total);
+      return Math.round(6 + frac * 54);
     }
   }
 
-  if (last.includes("Processing") && last.includes("batches")) return 14;
-  if (last.includes("Found"))   return 8;
-  if (last.includes("Starting")) return 3;
+  if (last.includes("Processing") && last.includes("batches")) return 6;
+  if (last.includes("Found"))    return 4;
+  if (last.includes("Starting")) return 2;
 
-  return 5;
+  return 3;
 }
 
 export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps) {
@@ -82,20 +98,30 @@ export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps
     setDisplayProgress(prev => Math.max(prev, targetProgress));
   }, [targetProgress]);
 
-  // Auto-creep: while we're in the extraction window (14–67%), inch forward
-  // every 800ms so the bar visibly moves even when there are no new messages.
+  // Auto-creep so the bar never looks frozen during long phases. We never
+  // creep past `targetProgress + cap`, so as soon as a real milestone fires
+  // the bar resyncs to it. Two zones:
+  //   • Extraction (6 → 60): creep up to 58 — leaves headroom for the
+  //     "Extracted N entities" milestone to bump to 60.
+  //   • Merging (60 → 82): merging is a single LLM call so we never get
+  //     intermediate progress; creep up to 78 so the bar still moves.
   useEffect(() => {
     if (isComplete) return;
     const id = setInterval(() => {
       setDisplayProgress(prev => {
-        // Only creep if we're in the "extraction" zone and haven't hit the
-        // next real milestone yet.
-        if (prev >= 14 && prev < 67) {
-          return Math.min(prev + 0.8, 67);
+        if (prev >= 6 && prev < 58) {
+          return Math.min(prev + 0.6, 58);
+        }
+        if (prev >= 60 && prev < 78) {
+          // Merging is slower per-percent than extraction, so creep slower.
+          return Math.min(prev + 0.35, 78);
+        }
+        if (prev >= 82 && prev < 89) {
+          return Math.min(prev + 0.25, 89);
         }
         return prev;
       });
-    }, 800);
+    }, 600);
     return () => clearInterval(id);
   }, [isComplete]);
 
@@ -218,7 +244,7 @@ export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps
           fontSize: 12, color: "#aaa", marginBottom: 32,
         }}>
           <span>{isComplete ? "Complete" : "Processing…"}</span>
-          <span>{displayProgress}%</span>
+          <span>{Math.round(displayProgress)}%</span>
         </div>
 
         {/* Do not close warning */}

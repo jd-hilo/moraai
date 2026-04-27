@@ -14,6 +14,13 @@ export const maxDuration = 300;
 // starting an import they can't finish.
 const MIN_CREDITS_IMPORT = 90;
 
+// Cap each import to the most recent N conversations. Two reasons:
+//   1. We're on Vercel Hobby — 60s function timeout. Larger imports just
+//      can't finish in one request.
+//   2. Recency dominates signal anyway: stuff from years ago rarely
+//      reflects the user as they are now.
+const MAX_CONVERSATIONS_PER_IMPORT = 30;
+
 export async function POST(request: Request) {
   try {
     const user = await getOrCreateUser();
@@ -104,6 +111,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Cap to most recent N conversations. Sort desc by date string (ISO
+    // dates sort lexicographically); fall back to insertion order if dates
+    // are missing/equal.
+    const totalConversations = conversations.length;
+    if (conversations.length > MAX_CONVERSATIONS_PER_IMPORT) {
+      conversations = [...conversations]
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
+        .slice(0, MAX_CONVERSATIONS_PER_IMPORT);
+    }
+    const cappedCount = conversations.length;
+
     // Stream progress via SSE
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
@@ -113,6 +131,11 @@ export async function POST(request: Request) {
         };
 
         try {
+          if (cappedCount < totalConversations) {
+            sendMessage(
+              `Capped to most recent ${cappedCount} of ${totalConversations} conversations.`
+            );
+          }
           await runImportPipeline(
             user.id,
             user.vaultPath,
