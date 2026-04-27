@@ -61,8 +61,7 @@ export interface CreditStatus {
 }
 
 /**
- * Read current credits, auto-resetting the weekly allotment if the reset
- * window has passed. Called at the start of any endpoint that spends credits.
+ * Read current credits. No auto-reset — credits are lifetime for now.
  */
 export async function getOrResetCredits(userId: string): Promise<CreditStatus> {
   const user = await prisma.user.findUnique({
@@ -70,24 +69,6 @@ export async function getOrResetCredits(userId: string): Promise<CreditStatus> {
     select: { credits: true, creditsResetAt: true },
   });
   if (!user) throw new Error(`User not found: ${userId}`);
-
-  const now = Date.now();
-  const resetAt = user.creditsResetAt.getTime();
-
-  if (now - resetAt >= WEEK_MS) {
-    // Weekly reset is due.
-    const newResetAt = new Date(now);
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { credits: WEEKLY_CREDITS, creditsResetAt: newResetAt },
-      select: { credits: true, creditsResetAt: true },
-    });
-    return {
-      credits: updated.credits,
-      creditsResetAt: updated.creditsResetAt,
-      weeklyCredits: WEEKLY_CREDITS,
-    };
-  }
 
   return {
     credits: user.credits,
