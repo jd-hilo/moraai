@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 const ORB_GRADIENT =
   "radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%)";
@@ -446,6 +448,17 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
+  // Defensive redirect: if a signed-in user lands on the marketing page
+  // (e.g. Clerk's OAuth callback dropped them here instead of /onboarding),
+  // bounce them into the app. /chat handles the new-user → onboarding redirect.
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace("/chat");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
   return (
     <div style={{ minHeight: "100vh", background: "#fafaf8", color: "#0d0d0d", overflowX: "hidden" }}>
       <style>{`
