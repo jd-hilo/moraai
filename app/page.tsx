@@ -448,16 +448,33 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
-  // Defensive redirect: if a signed-in user lands on the marketing page
-  // (e.g. Clerk's OAuth callback dropped them here instead of /onboarding),
-  // bounce them into the app. /chat handles the new-user → onboarding redirect.
+  // Defensive redirect for signed-in users who somehow land on the marketing
+  // page (e.g. Clerk's OAuth callback dropped them here instead of honoring
+  // forceRedirectUrl). We resolve onboarding state first and route directly
+  // to the correct destination so users don't see a chain of redirects.
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      router.replace("/chat");
-    }
-  }, [isLoaded, isSignedIn, router]);
+    if (!isLoaded || !isSignedIn || redirecting) return;
+    setRedirecting(true);
+    fetch("/api/ingest/import/status", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        router.replace(data?.onboardingComplete ? "/chat" : "/onboarding");
+      })
+      .catch(() => {
+        router.replace("/chat");
+      });
+  }, [isLoaded, isSignedIn, redirecting, router]);
+
+  // Render a blank screen while we resolve the destination so the marketing
+  // page doesn't flash for signed-in users.
+  if (isLoaded && isSignedIn) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#fafaf8" }} />
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#fafaf8", color: "#0d0d0d", overflowX: "hidden" }}>
