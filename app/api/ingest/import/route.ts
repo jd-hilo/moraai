@@ -14,12 +14,11 @@ export const maxDuration = 300;
 // starting an import they can't finish.
 const MIN_CREDITS_IMPORT = 90;
 
-// Cap each import to the most recent N conversations. Two reasons:
-//   1. We're on Vercel Hobby — 60s function timeout. Larger imports just
-//      can't finish in one request.
-//   2. Recency dominates signal anyway: stuff from years ago rarely
-//      reflects the user as they are now.
-const MAX_CONVERSATIONS_PER_IMPORT = 30;
+// Cap each import to the most recent N conversations. Recency dominates
+// signal — stuff from years ago rarely reflects the user as they are now.
+// 150 fits comfortably inside the 300s maxDuration with the optimized
+// extract pipeline.
+const MAX_CONVERSATIONS_PER_IMPORT = 150;
 
 export async function POST(request: Request) {
   try {

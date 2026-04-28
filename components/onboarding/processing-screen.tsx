@@ -84,10 +84,38 @@ function deriveProgress(messages: string[], isComplete: boolean): number {
   return 3;
 }
 
+// Rotating filler lines for phases where the server can't emit incremental
+// progress (single LLM calls). We rotate every few seconds so the user
+// sees the UI is alive even when no new server message arrives.
+const EXTRACT_FILLERS = [
+  "Reading through your conversations…",
+  "Picking out the things that matter to you…",
+  "Noting people, places, and recurring themes…",
+  "Listening for what you actually care about…",
+];
+const MERGE_FILLERS = [
+  "Identifying patterns and removing duplicates…",
+  "Cross-referencing memories…",
+  "Connecting the dots between conversations…",
+  "Stitching your memory graph together…",
+];
+const GENERATE_FILLERS = [
+  "Building your personal memory vault…",
+  "Organising what we found…",
+  "Almost there — finalising your vault…",
+];
+
+function zoneFillers(displayProgress: number): string[] | null {
+  if (displayProgress >= 6 && displayProgress < 60) return EXTRACT_FILLERS;
+  if (displayProgress >= 60 && displayProgress < 82) return MERGE_FILLERS;
+  if (displayProgress >= 82 && displayProgress < 95) return GENERATE_FILLERS;
+  return null;
+}
+
 export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps) {
   const targetProgress = deriveProgress(messages, isComplete);
   const lastRaw = messages[messages.length - 1] ?? "";
-  const currentMessage = friendlyMessage(lastRaw);
+  const baseMessage = friendlyMessage(lastRaw);
 
   // Smoothly animate toward the target, but never go backwards.
   // During the long extraction phase (14–68%) we creep forward automatically
@@ -124,6 +152,27 @@ export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps
     }, 600);
     return () => clearInterval(id);
   }, [isComplete]);
+
+  // Rotate filler messages every 4s while we're in a "stalled" phase so the
+  // user sees something other than a frozen line. As soon as a meaningful
+  // server milestone arrives (Hello/Done/etc), we override with that.
+  const [fillerIdx, setFillerIdx] = useState(0);
+  useEffect(() => {
+    if (isComplete) return;
+    const id = setInterval(() => setFillerIdx((i) => i + 1), 4000);
+    return () => clearInterval(id);
+  }, [isComplete]);
+
+  // Pick the message to actually show.
+  // - Hard milestones (Done, Hello [name], errors, capped count) always win.
+  // - Otherwise fall back to a rotating filler keyed off the current zone.
+  const pinnedMessages = ["Done", "Hello,", "Something went wrong", "Capped to most recent"];
+  const isPinned = pinnedMessages.some((p) => lastRaw.includes(p));
+  const fillers = zoneFillers(displayProgress);
+  const currentMessage =
+    isPinned || !fillers
+      ? baseMessage
+      : fillers[fillerIdx % fillers.length];
 
   // Orbiting dot angle for the loading animation
   const [angle, setAngle] = useState(0);

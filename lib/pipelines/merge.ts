@@ -18,8 +18,10 @@ export async function mergeEntities(
     return { entities: [], user_name: null };
   }
 
-  // If few entities, skip merge step
-  if (entities.length <= 5) {
+  // If few entities, skip merge step. Threshold raised to 12: a single
+  // small extract batch already returns ~10–15 entities, so most demo and
+  // small-real imports skip the merge round-trip entirely.
+  if (entities.length <= 12) {
     return { entities, user_name: null };
   }
 
@@ -28,7 +30,7 @@ export async function mergeEntities(
   try {
     const response = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 8192,
+      max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });
 

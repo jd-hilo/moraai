@@ -16,8 +16,10 @@ export async function runImportPipeline(
 ): Promise<void> {
   onProgress(`Found ${conversations.length} conversations to process.`);
 
-  // 1. Batch conversations into groups of 10
-  const batchSize = 10;
+  // 1. Batch conversations into groups of 5. Smaller batches → smaller
+  // prompts → faster Haiku responses, plus more parallelism (all batches
+  // run concurrently via Promise.all below).
+  const batchSize = 5;
   const batches: ParsedConversation[][] = [];
   for (let i = 0; i < conversations.length; i += batchSize) {
     batches.push(conversations.slice(i, i + batchSize));

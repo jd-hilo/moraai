@@ -248,6 +248,27 @@ function SourceCard({
   );
 }
 
+/* ── Recovery polling ────────────────────────────────────────────────── */
+// Used after a stream error / connection reset to see if the server-side
+// import actually completed despite the client losing the response.
+async function pollForCompletion(timeoutMs: number): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch("/api/ingest/import/status", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.onboardingComplete) return true;
+        if (data?.importStatus === "failed") return false;
+      }
+    } catch {
+      // ignore — try again
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return false;
+}
+
 /* ── Main wizard ─────────────────────────────────────────────────────── */
 
 export function ImportWizard() {
@@ -309,6 +330,17 @@ export function ImportWizard() {
       setStep("done");
     } catch (err) {
       console.error("Import error:", err);
+      // The server-side function often keeps running for a while after the
+      // streaming response gets killed (Vercel Hobby cutting the connection,
+      // browser tab backgrounding, etc). Before giving up, poll the status
+      // endpoint for ~30s to see if the import actually finished.
+      setProgressMessages((p) => [...p, "Connection dropped, checking if your import finished…"]);
+      const recovered = await pollForCompletion(45_000);
+      if (recovered) {
+        setIsComplete(true);
+        setStep("done");
+        return;
+      }
       setErrorMessage(
         err instanceof Error && err.message
           ? err.message
