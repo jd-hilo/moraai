@@ -413,7 +413,14 @@ export function ImportWizard() {
               Try again
             </button>
             <button
-              onClick={() => router.replace("/chat")}
+              onClick={async () => {
+                // Mark onboarding complete server-side so /chat doesn't
+                // bounce the user right back to /onboarding.
+                try {
+                  await fetch("/api/onboarding/skip", { method: "POST" });
+                } catch {}
+                window.location.href = "/chat";
+              }}
               style={{
                 padding: "12px 18px",
                 borderRadius: 10,
@@ -532,7 +539,12 @@ export function ImportWizard() {
           </div>
 
           <button
-            onClick={() => router.push("/chat")}
+            onClick={async () => {
+              try {
+                await fetch("/api/onboarding/skip", { method: "POST" });
+              } catch {}
+              window.location.href = "/chat";
+            }}
             style={{
               background: "none", border: "none",
               fontSize: 13, color: "#aaa", cursor: "pointer",
