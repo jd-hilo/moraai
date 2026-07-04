@@ -88,7 +88,13 @@ export async function POST(request: Request) {
         const availablePaths = (await listVaultFiles(user.vaultPath)).filter(
           (p) => p.endsWith(".md") && !p.startsWith("_")
         );
-        const relevantFiles = await routeContext(message, messages, indexContent, availablePaths);
+        const relevantFiles = await routeContext(
+          message,
+          messages,
+          indexContent,
+          availablePaths,
+          { userId: user.id, action: "context.route" }
+        );
         if (relevantFiles.length === 0) return "";
 
         const fileContents = await readMultipleVaultFiles(user.vaultPath, relevantFiles);

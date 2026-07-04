@@ -60,6 +60,9 @@ In your Clerk dashboard, add a webhook endpoint:
 - URL: `https://your-domain/api/webhooks/clerk`
 - Events: `user.created`
 
+Set `CLERK_WEBHOOK_SIGNING_SECRET` to the endpoint signing secret from Clerk.
+Webhook requests are rejected unless their signature is valid.
+
 ### 5. Run the dev server
 
 ```bash
@@ -67,6 +70,37 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Remote MCP connector
+
+Mora exposes an OAuth-protected Streamable HTTP MCP server at `/mcp`. It lets
+Claude recall a user's relevant Mora memory, save explicitly approved memories,
+and read existing Mora simulation reports. Claude remains the conversational
+model; MCP recall and memory saving do not call OpenAI or Anthropic from Mora.
+
+Before testing the connector:
+
+1. Use a Clerk development instance and enable **OAuth applications → Dynamic client registration**.
+2. Set `NEXT_PUBLIC_APP_URL` to the public origin of the deployment (for example, `https://staging.example.com`).
+3. Configure the normal Mora database and Clerk environment variables. Provider
+   keys are not required for MCP recall or memory saving, though Mora's existing
+   web chat, imports, and simulations still use them.
+4. Deploy to a publicly reachable HTTPS URL; local-only MCP endpoints cannot be reached by Claude.ai.
+5. In Claude, open **Settings → Connectors → Add custom connector** and enter `https://your-origin.example/mcp`.
+
+The canonical production connector URL is `https://www.mymora.app/mcp`.
+
+OAuth discovery is served from:
+
+- `/.well-known/oauth-protected-resource/mcp`
+- `/.well-known/oauth-authorization-server`
+
+Use separate staging and production Clerk applications and databases. The
+public setup experience is available at `/connect/claude`.
+
+The beta connector exposes `get_mora_status`, `recall_twin`, `save_memory`,
+`list_simulations`, and `get_simulation`. Creating or running simulations stays
+inside Mora's authenticated web experience.
 
 ---
 

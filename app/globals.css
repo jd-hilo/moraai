@@ -28,10 +28,12 @@
   --color-foreground: var(--color-text-primary);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 html,
@@ -45,6 +47,29 @@ body {
   color: #0d0d0d;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.mora-scroll-reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.mora-scroll-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mora-scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* Scrollbar styling */
@@ -75,12 +100,6 @@ body {
     opacity: 1;
     filter: blur(0);
   }
-}
-
-/* Subtle pulse used by lens status dots + skeleton cards */
-@keyframes mora-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
 }
 
 /* Spinner used by stage bar active indicator + synthesizing state */

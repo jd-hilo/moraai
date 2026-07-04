@@ -31,7 +31,7 @@ export function TypingIndicator() {
         }}
       />
 
-      {/* Three pulsing dots — no bubble */}
+      {/* Three static dots — no bubble */}
       <div style={{ display: "flex", gap: "5px", alignItems: "center", paddingTop: 2 }}>
         {[0, 1, 2].map((i) => (
           <span
@@ -42,18 +42,11 @@ export function TypingIndicator() {
               height: 7,
               borderRadius: "50%",
               backgroundColor: "#0d0d0d",
-              animation: `mora-dot-fade 1.2s ease-in-out ${i * 0.18}s infinite`,
+              opacity: 0.3 + i * 0.25,
             }}
           />
         ))}
       </div>
-
-      <style>{`
-        @keyframes mora-dot-fade {
-          0%, 60%, 100% { opacity: 0.2; transform: scale(0.85); }
-          30% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </div>
   );
 }
