@@ -199,10 +199,6 @@ export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps
       position: "relative",
     }}>
       <style>{`
-        @keyframes orb-breathe {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 24px rgba(180,140,240,0.45), 0 0 8px rgba(255,180,220,0.5); }
-          50%       { transform: scale(1.06); box-shadow: 0 0 40px rgba(180,140,240,0.65), 0 0 16px rgba(255,180,220,0.6); }
-        }
         @keyframes msg-in {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -234,7 +230,6 @@ export function ProcessingScreen({ messages, isComplete }: ProcessingScreenProps
           <div style={{
             width: 72, height: 72, borderRadius: "50%",
             background: ORB_GRADIENT,
-            animation: isComplete ? "none" : "orb-breathe 2.4s ease-in-out infinite",
             boxShadow: "0 0 24px rgba(180,140,240,0.45), 0 0 8px rgba(255,180,220,0.5)",
           }} />
           {!isComplete && (

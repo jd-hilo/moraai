@@ -454,10 +454,10 @@ export default function LandingPage() {
   // to the correct destination so users don't see a chain of redirects.
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
-  const [redirecting, setRedirecting] = useState(false);
+  const redirectingRef = useRef(false);
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || redirecting) return;
-    setRedirecting(true);
+    if (!isLoaded || !isSignedIn || redirectingRef.current) return;
+    redirectingRef.current = true;
     fetch("/api/ingest/import/status", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -466,7 +466,7 @@ export default function LandingPage() {
       .catch(() => {
         router.replace("/chat");
       });
-  }, [isLoaded, isSignedIn, redirecting, router]);
+  }, [isLoaded, isSignedIn, router]);
 
   // Render a blank screen while we resolve the destination so the marketing
   // page doesn't flash for signed-in users.
@@ -496,6 +496,34 @@ export default function LandingPage() {
         @keyframes twin-float-b { 0%,100%{transform:translateY(-5px) rotate(1deg)} 50%{transform:translateY(5px) rotate(-1deg)} }
         @keyframes twin-float-c { 0%,100%{transform:translateY(3px) rotate(0.5deg)} 50%{transform:translateY(-7px) rotate(-0.5deg)} }
         @keyframes twin-float-d { 0%,100%{transform:translateY(-3px) rotate(-0.8deg)} 50%{transform:translateY(7px) rotate(0.8deg)} }
+        .mora-announcement {
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mora-announcement:hover {
+          transform: translateY(-2px);
+          border-color: rgba(143, 133, 223, 0.32);
+          box-shadow: 0 16px 40px -26px rgba(87, 73, 168, 0.48),
+            inset 0 1px 0 rgba(255, 255, 255, 0.86);
+        }
+        .mora-announcement:active {
+          transform: translateY(-1px) scale(0.985);
+        }
+        .claude-cta {
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .claude-cta:hover {
+          transform: translateY(-2px);
+          border-color: rgba(218, 119, 86, 0.3);
+          box-shadow: 0 18px 42px -24px rgba(87, 61, 52, 0.42),
+            inset 0 1px 0 rgba(255, 255, 255, 0.92);
+        }
+        .claude-cta:active {
+          transform: translateY(-1px) scale(0.985);
+        }
       `}</style>
 
       {/* Header */}
@@ -659,25 +687,58 @@ export default function LandingPage() {
             maxWidth: 900,
           }}
         >
-          <div
+          <Link
+            href="/connect/claude"
+            className="mora-announcement"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 8,
-              padding: "6px 14px",
+              gap: 10,
+              padding: "7px 9px 7px 12px",
               marginBottom: 32,
               borderRadius: 999,
-              background: "rgba(255,255,255,0.65)",
-              border: "1px solid rgba(139,92,246,0.15)",
-              backdropFilter: "blur(12px)",
+              background: "rgba(255,255,255,0.72)",
+              border: "1px solid rgba(139,92,246,0.18)",
+              boxShadow:
+                "0 10px 30px -24px rgba(87,73,168,0.55), inset 0 1px 0 rgba(255,255,255,0.8)",
+              backdropFilter: "blur(16px)",
               fontSize: 13,
               fontWeight: 500,
-              color: "#6f6bc9",
+              color: "#55516f",
+              textDecoration: "none",
             }}
           >
-            <MoraOrb size={10} />
-            Sign up today to unlock 500 free credits
-          </div>
+            <span
+              aria-hidden
+              style={{
+                position: "relative",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#8f85df",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ color: "#6f6bc9", fontWeight: 600 }}>New</span>
+            <span style={{ width: 1, height: 14, background: "rgba(85,81,111,0.18)" }} />
+            <span>Mora memory is now available in Claude</span>
+            <span
+              aria-hidden
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 25,
+                height: 25,
+                borderRadius: "50%",
+                background: "rgba(143,133,223,0.1)",
+                color: "#6f6bc9",
+                fontSize: 15,
+              }}
+            >
+              →
+            </span>
+          </Link>
 
           <h1
             style={{
@@ -708,29 +769,82 @@ export default function LandingPage() {
             picks up where life left off.
           </p>
 
-          <Link
-            href="/sign-up"
+          <div
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              gap: 10,
-              height: 54,
-              padding: "0 30px",
-              borderRadius: 27,
-              background:
-                "linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%)",
-              color: "#fff",
-              fontSize: 16,
-              fontWeight: 500,
-              textDecoration: "none",
-              boxShadow:
-                "0 14px 36px rgba(143,133,223,0.4), inset 0 1px 0 rgba(255,255,255,0.3)",
-              letterSpacing: "-0.01em",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: 12,
             }}
           >
-            <SparkleIcon size={16} />
-            Start with Mora
-          </Link>
+            <Link
+              href="/sign-up"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                height: 54,
+                padding: "0 30px",
+                borderRadius: 27,
+                background:
+                  "linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%)",
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: 500,
+                textDecoration: "none",
+                boxShadow:
+                  "0 14px 36px rgba(143,133,223,0.4), inset 0 1px 0 rgba(255,255,255,0.3)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              <SparkleIcon size={16} />
+              Start with Mora
+            </Link>
+
+            <Link
+              href="/connect/claude"
+              className="claude-cta"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 11,
+                height: 54,
+                padding: "0 20px 0 16px",
+                borderRadius: 27,
+                background: "rgba(255,255,255,0.86)",
+                border: "1px solid rgba(23,23,26,0.1)",
+                color: "#17171a",
+                fontSize: 16,
+                fontWeight: 500,
+                textDecoration: "none",
+                boxShadow:
+                  "0 14px 34px -24px rgba(60,45,40,0.48), inset 0 1px 0 rgba(255,255,255,0.9)",
+                backdropFilter: "blur(14px)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              <Image
+                src="/claude-mark.png"
+                alt=""
+                width={600}
+                height={600}
+                style={{ width: 23, height: 23, objectFit: "contain" }}
+              />
+              Connect to Claude
+              <span
+                aria-hidden
+                style={{
+                  width: 8,
+                  height: 8,
+                  marginLeft: 4,
+                  borderRight: "2px solid #77736f",
+                  borderBottom: "2px solid #77736f",
+                  transform: "rotate(-45deg)",
+                }}
+              />
+            </Link>
+          </div>
 
           <p style={{ marginTop: 16, fontSize: 13, color: "#8a8a9a" }}>
             No credit card required

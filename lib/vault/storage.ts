@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import type { VaultFile } from "./types";
+
+type VaultDb = Pick<Prisma.TransactionClient, "vaultFile">;
 
 /**
  * Vault storage backed by Postgres via Prisma.
@@ -47,14 +50,19 @@ export async function writeVaultFile(
 export async function listVaultFiles(vaultPath: string): Promise<string[]> {
   try {
     const userId = await userIdFromVaultPath(vaultPath);
-    const rows = await prisma.vaultFile.findMany({
-      where: { userId },
-      select: { path: true },
-    });
-    return rows.map((r) => r.path);
+    return await listVaultFilesForUser(userId);
   } catch {
     return [];
   }
+}
+
+/** List vault paths for an already-authenticated internal Mora user. */
+export async function listVaultFilesForUser(userId: string): Promise<string[]> {
+  const rows = await prisma.vaultFile.findMany({
+    where: { userId },
+    select: { path: true },
+  });
+  return rows.map((row) => row.path);
 }
 
 export async function readMultipleVaultFiles(
@@ -78,10 +86,20 @@ export async function writeMultipleVaultFiles(
 ): Promise<void> {
   if (files.length === 0) return;
   const userId = await userIdFromVaultPath(vaultPath);
+  await writeMultipleVaultFilesForUser(userId, files);
+}
+
+/** Write vault files for an already-authenticated internal Mora user. */
+export async function writeMultipleVaultFilesForUser(
+  userId: string,
+  files: VaultFile[],
+  db: VaultDb = prisma
+): Promise<void> {
+  if (files.length === 0) return;
   // Upsert each file — Prisma doesn't support bulk upsert natively, so batch
   await Promise.all(
     files.map((f) =>
-      prisma.vaultFile.upsert({
+      db.vaultFile.upsert({
         where: { userId_path: { userId, path: f.path } },
         create: { userId, path: f.path, content: f.content },
         update: { content: f.content },
@@ -95,16 +113,44 @@ export async function readAllVaultFiles(
 ): Promise<Record<string, string>> {
   try {
     const userId = await userIdFromVaultPath(vaultPath);
-    const rows = await prisma.vaultFile.findMany({
-      where: { userId },
-      select: { path: true, content: true },
-    });
-    const results: Record<string, string> = {};
-    for (const row of rows) results[row.path] = row.content;
-    return results;
+    return readAllVaultFilesForUser(userId);
   } catch {
     return {};
   }
+}
+
+/** Read a vault for an already-authenticated internal Mora user. */
+export async function readAllVaultFilesForUser(
+  userId: string,
+  db: VaultDb = prisma
+): Promise<Record<string, string>> {
+  const rows = await db.vaultFile.findMany({
+    where: { userId },
+    select: { path: true, content: true },
+  });
+  const results: Record<string, string> = {};
+  for (const row of rows) results[row.path] = row.content;
+  return results;
+}
+
+/**
+ * Serialize read-modify-write vault operations for one user across Vercel
+ * instances. Locking the owning user row avoids unsupported Postgres `void`
+ * results from advisory-lock functions and lasts only for this transaction.
+ */
+export async function withUserVaultWriteLock<T>(
+  userId: string,
+  work: (db: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    const lockedUsers = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE
+    `;
+    if (lockedUsers.length !== 1) {
+      throw new Error("Mora user not found for vault write.");
+    }
+    return work(tx);
+  });
 }
 
 /**

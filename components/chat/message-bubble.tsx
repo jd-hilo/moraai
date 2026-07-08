@@ -151,21 +151,13 @@ function MemoryDiffPanel({ changes }: { changes: MemoryUpdateChange[] }) {
 }
 
 const KEYFRAMES = `
-  @keyframes mora-think-breathe {
-    0%, 100% { opacity: 0.15; transform: scale(0.8); }
-    50% { opacity: 0.7; transform: scale(1.1); }
-  }
   @keyframes mora-word-fade {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  @keyframes mora-memory-pulse {
-    0%, 100% { opacity: 0.35; }
-    50% { opacity: 1; }
-  }
 `;
 
-function MoraOrbIcon({ size = 18, pulse = false }: { size?: number; pulse?: boolean }) {
+function MoraOrbIcon({ size = 18 }: { size?: number }) {
   return (
     <div
       style={{
@@ -175,7 +167,6 @@ function MoraOrbIcon({ size = 18, pulse = false }: { size?: number; pulse?: bool
         background: "radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%)",
         boxShadow: "0 0 8px rgba(180,140,240,0.5), 0 0 3px rgba(255,180,220,0.4)",
         flexShrink: 0,
-        animation: pulse ? "mora-memory-pulse 1.8s ease-in-out infinite" : "none",
         cursor: "inherit",
       }}
     />
@@ -205,7 +196,7 @@ function AssistantContent({
               <span key={i} style={{
                 display: "inline-block", width: 5, height: 5, borderRadius: "50%",
                 background: "radial-gradient(circle at 40% 40%, #efb6ef, #8f85df)",
-                animation: `mora-think-breathe 2.4s ease-in-out ${i * 0.4}s infinite`,
+                opacity: 0.3 + i * 0.22,
               }} />
             ))}
           </span>
@@ -222,7 +213,7 @@ function AssistantContent({
               title={isMemoryLoading ? "Updating memory…" : "Memory updated"}
               style={{ background: "none", border: "none", padding: 0, cursor: hasMemoryChanges ? "pointer" : "default", lineHeight: 0 }}
             >
-              <MoraOrbIcon size={16} pulse={isMemoryLoading} />
+              <MoraOrbIcon size={16} />
             </button>
             {memoryExpanded && hasMemoryChanges && (
               <MemoryDiffPanel changes={memoryChanges} />
@@ -288,4 +279,3 @@ export function MessageBubble({ role, content, memoryUpdate, isStreaming, isMemo
     </>
   );
 }
-

@@ -523,7 +523,6 @@ function RunningTwinCluster({
               <span style={{
                 position: "absolute", inset: -3, borderRadius: "50%",
                 border: "1.5px solid #f59e0b",
-                animation: "mora-pulse 1s ease-in-out infinite",
                 zIndex: 0,
               }} />
             )}
@@ -554,7 +553,6 @@ function RunningTwinCluster({
               <span style={{
                 width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                 backgroundColor: status === "complete" ? "#16a34a" : status === "running" ? "#f59e0b" : status === "failed" ? "#dc2626" : "#d1d5db",
-                animation: status === "running" ? "mora-pulse 1s ease-in-out infinite" : undefined,
               }} />
               <span style={{ color: "#374151", fontWeight: 500 }}>Agent {gi + 1}</span>
               <span style={{ color: "#9ca3af" }}>· {counts[gi]} twins</span>
@@ -636,16 +634,16 @@ function ConfBar({ value, width, height }: { value: number; width: number; heigh
 }
 
 function RunBadge({ status }: { status: PossibilityRunStatus }) {
-  const map: Record<PossibilityRunStatus, { label: string; color: string; pulse?: boolean }> = {
+  const map: Record<PossibilityRunStatus, { label: string; color: string; dot?: boolean }> = {
     pending: { label: "PENDING", color: "#9ca3af" },
-    running: { label: "RUNNING", color: "#ca8a04", pulse: true },
+    running: { label: "RUNNING", color: "#ca8a04", dot: true },
     complete: { label: "DONE", color: "#16a34a" },
     failed: { label: "FAILED", color: "#dc2626" },
   };
   const s = map[status];
   return (
     <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: s.color, display: "inline-flex", alignItems: "center", gap: 3 }}>
-      {s.pulse && <span style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: s.color, animation: "mora-pulse 1s ease-in-out infinite" }} />}
+      {s.dot && <span style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: s.color }} />}
       {s.label}
     </span>
   );
