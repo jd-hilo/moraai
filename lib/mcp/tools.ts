@@ -12,8 +12,10 @@ import {
   saveMemoryForUser,
 } from "@/lib/mcp/memory";
 import {
+  createSimulationForUser,
   getSimulationForUser,
   listSimulationsForUser,
+  runSimulationForUser,
   SimulationServiceError,
 } from "@/lib/skills/simulations/service";
 import { listVaultFilesForUser } from "@/lib/vault/storage";
@@ -29,6 +31,13 @@ const WRITES_MEMORY = {
   readOnlyHint: false,
   destructiveHint: false,
   idempotentHint: true,
+  openWorldHint: false,
+} as const;
+
+const MUTATES_SIMULATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
   openWorldHint: false,
 } as const;
 
@@ -132,14 +141,14 @@ function simulationNextAction(status: string): string {
     case "generating_lenses":
       return "Wait briefly, then call get_simulation again.";
     case "ready_to_run":
-      return "Tell the user the simulation is ready and share its Mora URL so they can run it there.";
+      return "Tell the user the simulation is ready. If they approve running it, call run_simulation.";
     case "running":
     case "generating_report":
       return "Wait briefly, then call get_simulation again for progress or the report.";
     case "complete":
       return "Summarize the report naturally and help the user reason about the result.";
     case "failed":
-      return "Explain that the simulation failed and share its Mora URL so the user can retry there.";
+      return "Explain that the simulation failed. If the user wants to retry it, call run_simulation or share its Mora URL.";
     default:
       return "Call get_simulation to check progress.";
   }
@@ -286,7 +295,7 @@ export function registerMoraTools(server: McpServer): void {
           nextAction:
             simulations.length > 0
               ? "Use get_simulation to inspect a selected simulation."
-              : "Share the Mora simulations URL if the user wants to create one.",
+              : "Ask what scenario the user wants to explore, then call create_simulation.",
           simulations,
           simulationsUrl: simulationsUrl(),
         });
@@ -326,6 +335,88 @@ export function registerMoraTools(server: McpServer): void {
           simulation: safeSimulation,
           simulationUrl: simulationsUrl(simulation.id),
         }, status === "error");
+      } catch (error) {
+        return safeError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "create_simulation",
+    {
+      title: "Create a Mora simulation",
+      description:
+        "Create a new future simulation for the authenticated Mora user and begin generating possibilities.",
+      inputSchema: {
+        scenario: z
+          .string()
+          .trim()
+          .min(1)
+          .max(2_000)
+          .describe("The concrete what-if scenario the user wants Mora to simulate."),
+        narrative: z
+          .string()
+          .trim()
+          .max(4_000)
+          .optional()
+          .describe("Optional background context from the user about the scenario."),
+        title: z
+          .string()
+          .trim()
+          .max(120)
+          .optional()
+          .describe("Optional concise title for the simulation."),
+        timeHorizonYears: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .describe("How many years into the future to simulate."),
+      },
+      annotations: MUTATES_SIMULATIONS,
+    },
+    async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
+      try {
+        const user = await moraUser(authInfo);
+        const simulation = await createSimulationForUser(user, {
+          scenario,
+          narrative,
+          title,
+          timeHorizonYears,
+        });
+        return result({
+          status: "pending",
+          nextAction: "Wait briefly, then call get_simulation to check whether possibilities are ready.",
+          simulation,
+          simulationUrl: simulationsUrl(simulation.id),
+        });
+      } catch (error) {
+        return safeError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "run_simulation",
+    {
+      title: "Run a Mora simulation",
+      description:
+        "Run a ready Mora simulation for the authenticated user and begin generating the final report.",
+      inputSchema: {
+        simulationId: z.string().trim().min(1).max(120),
+      },
+      annotations: MUTATES_SIMULATIONS,
+    },
+    async ({ simulationId }, { authInfo }) => {
+      try {
+        const user = await moraUser(authInfo);
+        const simulation = await runSimulationForUser(user, simulationId);
+        return result({
+          status: "pending",
+          nextAction: "Wait briefly, then call get_simulation for progress or the completed report.",
+          simulation,
+          simulationUrl: simulationsUrl(simulation.id),
+        });
       } catch (error) {
         return safeError(error);
       }

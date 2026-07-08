@@ -75,7 +75,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Mora exposes an OAuth-protected Streamable HTTP MCP server at `/mcp`. It lets
 Claude recall a user's relevant Mora memory, save explicitly approved memories,
-and read existing Mora simulation reports. Claude remains the conversational
+and create, run, or read Mora simulations. Claude remains the conversational
 model; MCP recall and memory saving do not call OpenAI or Anthropic from Mora.
 
 Before testing the connector:
@@ -99,8 +99,8 @@ Use separate staging and production Clerk applications and databases. The
 public setup experience is available at `/connect/claude`.
 
 The beta connector exposes `get_mora_status`, `recall_twin`, `save_memory`,
-`list_simulations`, and `get_simulation`. Creating or running simulations stays
-inside Mora's authenticated web experience.
+`list_simulations`, `get_simulation`, `create_simulation`, and
+`run_simulation`.
 
 ---
 

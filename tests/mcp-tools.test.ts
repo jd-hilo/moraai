@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   saveMemoryForUser: vi.fn(),
   listSimulationsForUser: vi.fn(),
   getSimulationForUser: vi.fn(),
+  createSimulationForUser: vi.fn(),
+  runSimulationForUser: vi.fn(),
 }));
 
 vi.mock("@/lib/get-or-create-user", () => ({
@@ -29,6 +31,8 @@ vi.mock("@/lib/skills/simulations/service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/skills/simulations/service")>()),
   listSimulationsForUser: mocks.listSimulationsForUser,
   getSimulationForUser: mocks.getSimulationForUser,
+  createSimulationForUser: mocks.createSimulationForUser,
+  runSimulationForUser: mocks.runSimulationForUser,
 }));
 
 import { registerMoraTools } from "@/lib/mcp/tools";
@@ -56,6 +60,7 @@ const authInfo = { extra: { userId: "clerk-alpha" } } as unknown as AuthInfo;
 
 describe("MCP tool surface", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.getOrCreateUserByClerkId.mockResolvedValue({
       id: "mora-alpha",
       onboardingComplete: true,
@@ -78,9 +83,17 @@ describe("MCP tool surface", () => {
       status: "failed",
       error: "Provider secret or stack trace",
     });
+    mocks.createSimulationForUser.mockResolvedValue({
+      id: "sim-new",
+      status: "generating_lenses",
+    });
+    mocks.runSimulationForUser.mockResolvedValue({
+      id: "sim-alpha",
+      status: "running",
+    });
   });
 
-  it("registers exactly the five Claude-native beta tools with safe annotations", () => {
+  it("registers exactly the Claude-native beta tools with safe annotations", () => {
     const tools = registeredTools();
     expect([...tools.keys()]).toEqual([
       "get_mora_status",
@@ -88,6 +101,8 @@ describe("MCP tool surface", () => {
       "save_memory",
       "list_simulations",
       "get_simulation",
+      "create_simulation",
+      "run_simulation",
     ]);
     expect(tools.get("save_memory")?.config.annotations).toMatchObject({
       readOnlyHint: false,
@@ -95,6 +110,12 @@ describe("MCP tool surface", () => {
     });
     for (const name of ["get_mora_status", "recall_twin", "list_simulations", "get_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({ readOnlyHint: true });
+    }
+    for (const name of ["create_simulation", "run_simulation"]) {
+      expect(tools.get(name)?.config.annotations).toMatchObject({
+        readOnlyHint: false,
+        idempotentHint: false,
+      });
     }
   });
 
@@ -117,6 +138,37 @@ describe("MCP tool surface", () => {
       memory: "I focus in the morning.",
       context: undefined,
     });
+  });
+
+  it("passes the OAuth-resolved Mora user into simulation mutations", async () => {
+    const tools = registeredTools();
+    await tools.get("create_simulation")!.callback(
+      {
+        scenario: "Move to Lisbon",
+        narrative: "I would keep my current job.",
+        title: "Lisbon move",
+        timeHorizonYears: 3,
+      } as never,
+      { authInfo }
+    );
+    await tools.get("run_simulation")!.callback(
+      { simulationId: "sim-alpha" } as never,
+      { authInfo }
+    );
+
+    expect(mocks.createSimulationForUser).toHaveBeenCalledWith(
+      { id: "mora-alpha", onboardingComplete: true },
+      {
+        scenario: "Move to Lisbon",
+        narrative: "I would keep my current job.",
+        title: "Lisbon move",
+        timeHorizonYears: 3,
+      }
+    );
+    expect(mocks.runSimulationForUser).toHaveBeenCalledWith(
+      { id: "mora-alpha", onboardingComplete: true },
+      "sim-alpha"
+    );
   });
 
   it("returns onboarding and no-match states without leaking internal details", async () => {

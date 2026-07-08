@@ -304,9 +304,9 @@ export default function ConnectClaudePage() {
               ],
               [
                 "03",
-                "Bring in simulations",
-                "Use an existing Mora simulation report when a decision needs more perspective.",
-                "Bring in my remote-vs-office simulation and help me decide.",
+                "Run simulations",
+                "Create a Mora simulation, track its progress, and bring the report back into the decision.",
+                "Simulate what happens if I take the remote role for three years.",
               ],
             ].map(([number, title, description, example], index) => (
               <ScrollReveal key={title} delay={index * 90}>
