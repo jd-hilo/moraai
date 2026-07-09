@@ -41,6 +41,26 @@ export interface CreateSimulationInput {
   timeHorizonYears: number;
 }
 
+function normalizeCreateInput(input: CreateSimulationInput) {
+  const scenario = input.scenario.trim();
+  const narrative = input.narrative?.trim() ?? "";
+  const title = input.title?.trim() || scenario.slice(0, 80);
+  const years = Math.round(input.timeHorizonYears);
+
+  if (!scenario) {
+    throw new SimulationServiceError("INVALID_INPUT", 400, "Scenario is required.");
+  }
+  if (!Number.isFinite(years) || years < 1 || years > 50) {
+    throw new SimulationServiceError(
+      "INVALID_INPUT",
+      400,
+      "timeHorizonYears must be between 1 and 50."
+    );
+  }
+
+  return { scenario, narrative, title, years };
+}
+
 function creditError(error: CreditsExhaustedError, needed: number): SimulationServiceError {
   return new SimulationServiceError(
     "INSUFFICIENT_CREDITS",
@@ -111,21 +131,7 @@ export async function createSimulationForUser(
   input: CreateSimulationInput,
   schedule: Scheduler = scheduleAfterResponse
 ): Promise<{ id: string; status: SimulationStatus }> {
-  const scenario = input.scenario.trim();
-  const narrative = input.narrative?.trim() ?? "";
-  const title = input.title?.trim() || scenario.slice(0, 80);
-  const years = Math.round(input.timeHorizonYears);
-
-  if (!scenario) {
-    throw new SimulationServiceError("INVALID_INPUT", 400, "Scenario is required.");
-  }
-  if (!Number.isFinite(years) || years < 1 || years > 50) {
-    throw new SimulationServiceError(
-      "INVALID_INPUT",
-      400,
-      "timeHorizonYears must be between 1 and 50."
-    );
-  }
+  const { scenario, narrative, title, years } = normalizeCreateInput(input);
 
   try {
     await requireCredits(user.id, MIN_CREDITS_START_SIMULATION);
@@ -167,11 +173,85 @@ export async function createSimulationForUser(
   return { id: simulation.id, status: "generating_lenses" };
 }
 
+/**
+ * Runs every stage before returning. This is intentionally separate from the
+ * web-app's asynchronous draft flow so an MCP client can answer a user's
+ * request for a simulation with the completed report in the same turn.
+ */
+export async function simulateFutureForUser(
+  user: User,
+  input: CreateSimulationInput
+): Promise<SimulationDetail> {
+  const { scenario, narrative, title, years } = normalizeCreateInput(input);
+
+  try {
+    await requireCredits(user.id, MIN_CREDITS_START_SIMULATION);
+  } catch (error) {
+    if (error instanceof CreditsExhaustedError) {
+      throw creditError(error, MIN_CREDITS_START_SIMULATION);
+    }
+    throw error;
+  }
+
+  const simulation = await prisma.simulation.create({
+    data: {
+      userId: user.id,
+      title,
+      scenario,
+      narrative: narrative || null,
+      timeHorizonYears: years,
+      status: "generating_lenses",
+      lenses: [] as unknown as Prisma.InputJsonValue,
+      runs: [] as unknown as Prisma.InputJsonValue,
+    },
+    select: { id: true },
+  });
+
+  try {
+    await generateSimulationPossibilities(user, simulation.id);
+  } catch (error) {
+    await markSimulationFailed(simulation.id, error);
+    throw error;
+  }
+
+  try {
+    await beginSimulationRun(user, simulation.id);
+  } catch (error) {
+    // A credit or state error leaves a generated simulation available to run
+    // later; it is not a failed simulation.
+    throw error;
+  }
+
+  try {
+    await executeSimulation(user, simulation.id);
+  } catch (error) {
+    await markSimulationFailed(simulation.id, error);
+    throw error;
+  }
+
+  return getSimulationForUser(user.id, simulation.id);
+}
+
 export async function runSimulationForUser(
   user: User,
   simulationId: string,
   schedule: Scheduler = scheduleAfterResponse
 ): Promise<{ id: string; status: SimulationStatus }> {
+  await beginSimulationRun(user, simulationId);
+
+  schedule(async () => {
+    try {
+      await executeSimulation(user, simulationId);
+    } catch (error) {
+      console.error(`[simulations] run failed for ${simulationId}:`, error);
+      await markSimulationFailed(simulationId, error);
+    }
+  });
+
+  return { id: simulationId, status: "running" };
+}
+
+async function beginSimulationRun(user: User, simulationId: string): Promise<void> {
   const simulation = await findOwnedSimulation(user.id, simulationId);
   if (!simulation) throw new SimulationServiceError("NOT_FOUND", 404, "Simulation not found.");
   if (simulation.status !== "ready_to_run" && simulation.status !== "failed") {
@@ -209,22 +289,15 @@ export async function runSimulationForUser(
       error: null,
     },
   });
+}
 
-  schedule(async () => {
-    try {
-      await executeSimulation(user, simulation.id);
-    } catch (error) {
-      console.error(`[simulations] run failed for ${simulation.id}:`, error);
-      await prisma.simulation
-        .update({
-          where: { id: simulation.id },
-          data: { status: "failed", error: (error as Error).message },
-        })
-        .catch(() => undefined);
-    }
-  });
-
-  return { id: simulation.id, status: "running" };
+async function markSimulationFailed(simulationId: string, error: unknown): Promise<void> {
+  await prisma.simulation
+    .update({
+      where: { id: simulationId },
+      data: { status: "failed", error: (error as Error).message },
+    })
+    .catch(() => undefined);
 }
 
 async function generateSimulationPossibilities(user: User, simulationId: string): Promise<void> {

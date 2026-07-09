@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => {
     },
     requireCredits: vi.fn(),
     loadSimulationContext: vi.fn(),
+    generateLenses: vi.fn(),
+    generateNarrative: vi.fn(),
     runLensSimulation: vi.fn(),
     generateReport: vi.fn(),
     FakeCreditsExhaustedError,
@@ -36,8 +38,12 @@ vi.mock("@/lib/credits", () => ({
 vi.mock("@/lib/skills/simulations/context-loader", () => ({
   loadSimulationContext: mocks.loadSimulationContext,
 }));
-vi.mock("@/lib/pipelines/simulations/generate-lenses", () => ({ generateLenses: vi.fn() }));
-vi.mock("@/lib/pipelines/simulations/generate-narrative", () => ({ generateNarrative: vi.fn() }));
+vi.mock("@/lib/pipelines/simulations/generate-lenses", () => ({
+  generateLenses: mocks.generateLenses,
+}));
+vi.mock("@/lib/pipelines/simulations/generate-narrative", () => ({
+  generateNarrative: mocks.generateNarrative,
+}));
 vi.mock("@/lib/pipelines/simulations/generate-report", () => ({
   generateReport: mocks.generateReport,
 }));
@@ -50,6 +56,7 @@ import {
   getSimulationForUser,
   listSimulationsForUser,
   runSimulationForUser,
+  simulateFutureForUser,
   SimulationServiceError,
 } from "@/lib/skills/simulations/service";
 
@@ -76,6 +83,7 @@ describe("simulation service", () => {
     mocks.requireCredits.mockResolvedValue({ credits: 500 });
     mocks.loadSimulationContext.mockResolvedValue("context");
     mocks.generateReport.mockResolvedValue({ summary: "report" });
+    mocks.generateLenses.mockResolvedValue([{ id: "one" }, { id: "two" }]);
     mocks.runLensSimulation.mockImplementation(async ({ lens }: { lens: { id: string } }) => ({
       output: `output-${lens.id}`,
       confidence: 0.8,
@@ -181,6 +189,44 @@ describe("simulation service", () => {
     expect(completed).toEqual([
       expect.objectContaining({ possibilityId: "one", output: "output-one" }),
       expect.objectContaining({ possibilityId: "two", output: "output-two" }),
+    ]);
+  });
+
+  it("runs a Claude-requested simulation from creation through its completed report", async () => {
+    let stored = {
+      ...simulation("alpha"),
+      id: "sim-full",
+      status: "generating_lenses",
+      lenses: [],
+      runs: [],
+      report: null,
+      narrative: "Keep the current job.",
+    };
+    mocks.prisma.simulation.create.mockImplementation(async ({ data }) => {
+      stored = { ...stored, ...data };
+      return { id: stored.id };
+    });
+    mocks.prisma.simulation.findUnique.mockImplementation(async () => stored);
+    mocks.prisma.simulation.update.mockImplementation(async ({ data }) => {
+      stored = { ...stored, ...data };
+      return stored;
+    });
+
+    const completed = await simulateFutureForUser(
+      { id: "alpha", name: "Alpha", vaultPath: "vaults/alpha/" } as never,
+      {
+        scenario: "Move to Lisbon",
+        narrative: "Keep the current job.",
+        timeHorizonYears: 3,
+      }
+    );
+
+    expect(mocks.requireCredits).toHaveBeenCalledTimes(2);
+    expect(completed.status).toBe("complete");
+    expect(completed.report).toEqual({ summary: "report" });
+    expect(completed.runs).toEqual([
+      expect.objectContaining({ possibilityId: "one", status: "complete" }),
+      expect.objectContaining({ possibilityId: "two", status: "complete" }),
     ]);
   });
 });

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 
 export default function ConnectClaudePage() {
   const endpoint = PRODUCTION_MCP_ENDPOINT;
+  const accountHref = "/sign-up?source=claude";
 
   return (
     <main className="min-h-[100dvh] overflow-x-clip bg-[#fafaf8] text-[#0d0d0d]">
@@ -34,10 +35,10 @@ export default function ConnectClaudePage() {
             MCP connector
           </span>
           <Link
-            href="/sign-up"
+            href={accountHref}
             className="rounded-full bg-[#17171a] px-5 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#303036] active:scale-[0.98]"
           >
-            Try Mora
+            Create account
           </Link>
         </div>
       </header>
@@ -55,9 +56,9 @@ export default function ConnectClaudePage() {
               into Claude.
             </h1>
             <p className="mt-8 max-w-[58ch] text-base leading-relaxed text-[#656477] md:text-lg">
-              Add Mora as a custom MCP connector and Claude can draw on the
-              memories, values, and decisions you have already built—right in
-              the conversation you are having.
+              Add Mora as a custom MCP connector, then let Claude enroll the
+              personal context you choose to carry forward—right in the
+              conversation you are having.
             </p>
             <p className="mt-4 max-w-[58ch] text-sm leading-relaxed text-[#7b7a8b]">
               Claude remains the model doing the reasoning. Mora securely
@@ -305,7 +306,7 @@ export default function ConnectClaudePage() {
               [
                 "03",
                 "Run simulations",
-                "Create a Mora simulation, track its progress, and bring the report back into the decision.",
+                "Ask Claude to run a scenario and Mora returns the completed report right in the conversation.",
                 "Simulate what happens if I take the remote role for three years.",
               ],
             ].map(([number, title, description, example], index) => (
@@ -335,28 +336,29 @@ export default function ConnectClaudePage() {
           <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-12 px-5 py-20 md:px-10 lg:grid-cols-[1fr_0.8fr] lg:items-center lg:py-28">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6f6bc9]">
-                Start from your history
+              Start in Claude
               </p>
               <h2 className="mt-5 max-w-2xl font-[Recoleta] text-3xl font-normal leading-[1.05] tracking-[-0.035em] md:text-5xl">
-                Give Claude context worth carrying forward.
+                Create your Mora twin with one simple message.
               </h2>
               <p className="mt-5 max-w-[58ch] text-base leading-relaxed text-[#7b7a8b]">
-                New to Mora? Import past conversations first, then connect
-                Claude to the memory Mora builds from them.
+                After you connect, ask Claude “How do I use Mora?” It will ask
+                for permission to turn the context it can access into your
+                Mora memory. You can also import history later.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 lg:justify-end">
               <Link
-                href="/onboarding?source=claude"
+                href="/sign-up?source=claude"
                 className="rounded-full bg-[#17171a] px-6 py-3 text-sm font-semibold text-white transition duration-300 hover:bg-[#303036] active:scale-[0.98]"
               >
-                Import conversation history
+                Create account
               </Link>
               <Link
-                href="/sign-up"
+                href="/onboarding?source=claude"
                 className="rounded-full border border-[#17171a]/15 bg-white px-6 py-3 text-sm font-semibold text-[#242329] transition duration-300 hover:border-[#8f85df]/30 hover:text-[#6f6bc9] active:scale-[0.98]"
               >
-                Create an account
+                Import history instead
               </Link>
             </div>
           </div>
