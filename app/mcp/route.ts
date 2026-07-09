@@ -10,7 +10,8 @@ const instructions = `Mora is the authenticated user's private digital twin.
 - Claude composes the response; do not describe Mora as a separate chatbot.
 - Call save_memory only after the user explicitly approves the exact durable fact being saved.
 - Mora does not call a separate language model for connector recall or memory saving.
-- Existing simulations can be read here. Creating or running one happens in Mora using the URL returned by the simulation tools.
+- Simulations can be created, checked, and run here. Use get_simulation to follow progress after starting one.
+- Call create_simulation or run_simulation only after the user asks for or approves that simulation action.
 - If memory is not ready, share the returned setup URL or offer conversational memory setup.`;
 
 export const dynamic = "force-dynamic";
