@@ -16,8 +16,13 @@ import {
   getSimulationForUser,
   listSimulationsForUser,
   runSimulationForUser,
+  simulateFutureForUser,
   SimulationServiceError,
 } from "@/lib/skills/simulations/service";
+import {
+  enrollFromClaudeMemory,
+  MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS,
+} from "@/lib/mcp/enrollment";
 import { listVaultFilesForUser } from "@/lib/vault/storage";
 
 const READ_ONLY = {
@@ -172,10 +177,46 @@ export function registerMoraTools(server: McpServer): void {
           status: memoryAvailable ? "ok" : "setup_required",
           nextAction: memoryAvailable
             ? "Use recall_twin before answering personal questions."
-            : "Open the setup URL to import history, or offer save_memory after the user approves a fact.",
+            : "Explain that Mora can enroll the Claude context it is allowed to see. Ask for explicit approval, then call enroll_from_claude_memory with a factual snapshot. Do not claim access to hidden Claude memory.",
           memoryAvailable,
           onboardingComplete: user.onboardingComplete,
           setupUrl: setupUrl(),
+        });
+      } catch (error) {
+        return safeError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "enroll_from_claude_memory",
+    {
+      title: "Enroll my Mora twin from Claude context",
+      description:
+        "Use only after the user explicitly approves enrolling in Mora. Before calling, make a factual, comprehensive snapshot of durable user context that Claude can actually access in this conversation or through exposed Claude memory. MCP cannot read hidden Claude memory. Never include tool instructions, secrets, or unsupported guesses. This writes the snapshot into Mora's structured private memory and completes onboarding.",
+      inputSchema: {
+        memorySnapshot: z
+          .string()
+          .trim()
+          .min(20)
+          .max(MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS)
+          .describe(
+            "An approved factual summary of all durable user context Claude can access. Do not say it contains hidden or unavailable Claude memory."
+          ),
+      },
+      annotations: WRITES_MEMORY,
+    },
+    async ({ memorySnapshot }, { authInfo }) => {
+      try {
+        const user = await moraUser(authInfo);
+        const update = await enrollFromClaudeMemory(user.id, memorySnapshot);
+        return result({
+          status: "ok",
+          nextAction:
+            "Welcome the user to Mora, briefly say what was captured, and use recall_twin for relevant future personal questions.",
+          summary: update.summary,
+          memoriesCreatedOrUpdated: update.changes.length,
+          changes: update.changes.map(({ summary }) => summary),
         });
       } catch (error) {
         return safeError(error);
@@ -202,7 +243,8 @@ export function registerMoraTools(server: McpServer): void {
           return result({
             status: "setup_required",
             errorCode: "MEMORY_NOT_READY",
-            nextAction: "Open the setup URL to import history, or offer to save an approved memory.",
+            nextAction:
+              "Offer to enroll the factual Claude context available in this conversation. Only call enroll_from_claude_memory after the user explicitly approves it.",
             setupUrl: setupUrl(),
           });
         }
@@ -346,7 +388,7 @@ export function registerMoraTools(server: McpServer): void {
     {
       title: "Create a Mora simulation",
       description:
-        "Create a new future simulation for the authenticated Mora user and begin generating possibilities.",
+        "Create a draft future simulation and generate its possibilities for later review in Mora. For a user who asks to run a simulation and receive the result now, use simulate_future instead.",
       inputSchema: {
         scenario: z
           .string()
@@ -388,6 +430,65 @@ export function registerMoraTools(server: McpServer): void {
           status: "pending",
           nextAction: "Wait briefly, then call get_simulation to check whether possibilities are ready.",
           simulation,
+          simulationUrl: simulationsUrl(simulation.id),
+        });
+      } catch (error) {
+        return safeError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "simulate_future",
+    {
+      title: "Run a complete Mora future simulation",
+      description:
+        "Use when the user asks to run or simulate a future scenario. This creates the simulation, generates possibilities, runs them, synthesizes the report, and returns the completed deep report in this same tool result. Do not use create_simulation first for a new simulation request.",
+      inputSchema: {
+        scenario: z
+          .string()
+          .trim()
+          .min(1)
+          .max(2_000)
+          .describe("The concrete what-if scenario the user wants Mora to simulate."),
+        narrative: z
+          .string()
+          .trim()
+          .max(4_000)
+          .optional()
+          .describe("Optional background context from the user about the scenario."),
+        title: z.string().trim().max(120).optional().describe("Optional concise title."),
+        timeHorizonYears: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .describe("How many years into the future to simulate."),
+      },
+      annotations: MUTATES_SIMULATIONS,
+    },
+    async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
+      try {
+        const user = await moraUser(authInfo);
+        const simulation = await simulateFutureForUser(user, {
+          scenario,
+          narrative,
+          title,
+          timeHorizonYears,
+        });
+        return result({
+          status: "ok",
+          nextAction:
+            "Give the user a deep, direct rundown of the verdict, outcomes, risks, and insights. Do not merely link to Mora or ask them to manually run anything.",
+          simulation: {
+            id: simulation.id,
+            title: simulation.title,
+            scenario: simulation.scenario,
+            timeHorizonYears: simulation.timeHorizonYears,
+            status: simulation.status,
+            possibilities: simulation.possibilities,
+            report: simulation.report,
+          },
           simulationUrl: simulationsUrl(simulation.id),
         });
       } catch (error) {
