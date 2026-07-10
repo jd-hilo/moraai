@@ -479,7 +479,7 @@ export function registerMoraTools(server: McpServer): void {
         return result({
           status: "ok",
           nextAction:
-            "Give the user a deep, direct rundown of the verdict, outcomes, risks, and insights. Do not merely link to Mora or ask them to manually run anything.",
+            "Return only the completed Mora report. Do not add Claude analysis, advice, questions, a preface, or an afterword; preserve the report's wording and structure as closely as possible.",
           simulation: {
             id: simulation.id,
             title: simulation.title,
