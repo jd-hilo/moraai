@@ -19,6 +19,12 @@ import {
   simulateFutureForUser,
   SimulationServiceError,
 } from "@/lib/skills/simulations/service";
+import type {
+  Possibility,
+  PossibilityRun,
+  SimulationDetail,
+  SimulationReport,
+} from "@/lib/skills/simulations/types";
 import {
   enrollFromClaudeMemory,
   MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS,
@@ -74,6 +80,104 @@ function result(payload: MoraToolPayload, isError = false) {
     isError,
     content: [{ type: "text" as const, text: JSON.stringify(payload) }],
   };
+}
+
+function finalAnswerResult(payload: MoraToolPayload, verbatimText: string) {
+  return {
+    isError: false,
+    // Keep exactly one model-visible text block. Structured content carries
+    // machine metadata without inviting the host to narrate around the answer.
+    content: [
+      {
+        type: "text" as const,
+        text: verbatimText,
+        annotations: { audience: ["user" as const], priority: 1 },
+      },
+    ],
+    structuredContent: payload,
+  };
+}
+
+const completedSimulationOutputSchema = {
+  status: z.literal("ok"),
+  nextAction: z.string(),
+  presentation: z.literal("final_answer_text_content"),
+  pathCount: z.number().int().nonnegative(),
+  completedPathCount: z.number().int().nonnegative(),
+  simulation: z.object({
+    id: z.string(),
+    title: z.string(),
+    scenario: z.string(),
+    timeHorizonYears: z.number().int(),
+    status: z.literal("complete"),
+  }),
+  simulationUrl: z.string(),
+};
+
+function formatSection(section: SimulationReport["outcomes"]): string {
+  const points = section.points.map((point) => `- ${point}`).join("\n");
+  return `## ${section.title}\n${points || "- No findings were returned."}`;
+}
+
+function pathResult(
+  possibility: Possibility,
+  run: PossibilityRun | undefined,
+  index: number,
+  total: number
+): string {
+  const lines = [
+    `## Path ${index + 1} of ${total}: ${possibility.title}`,
+    `Probability: ${possibility.probability}%`,
+    `Path premise: ${possibility.description}`,
+    `Run status: ${run?.status ?? "missing"}`,
+  ];
+
+  if (run?.status === "complete" && run.output) {
+    lines.push("", run.output);
+    if (run.confidence !== undefined) lines.push("", `Path confidence: ${run.confidence}%`);
+  } else {
+    lines.push("", "No completed narrative was returned for this path.");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Build the display-ready MCP result. Run narratives are deliberately placed
+ * before synthesis and copied without paraphrasing so connector hosts can
+ * present every simulated path directly to the user.
+ */
+export function buildVerbatimSimulation(simulation: SimulationDetail): string {
+  const total = simulation.possibilities.length;
+  const runsByPossibility = new Map(
+    simulation.runs.map((run) => [run.possibilityId, run] as const)
+  );
+  const paths = simulation.possibilities.map((possibility, index) =>
+    pathResult(possibility, runsByPossibility.get(possibility.id), index, total)
+  );
+  const report = simulation.report;
+  const synthesis = report
+    ? [
+        "# Mora Synthesis",
+        `## Verdict\n${report.verdict}`,
+        `Overall confidence: ${report.overallConfidence}%`,
+        `## Summary\n${report.summary}`,
+        formatSection(report.outcomes),
+        formatSection(report.risks),
+        formatSection(report.insights),
+      ].join("\n\n")
+    : "# Mora Synthesis\n\nNo completed synthesis was returned.";
+
+  return [
+    `# Mora Simulation: ${simulation.title}`,
+    `Scenario: ${simulation.scenario}`,
+    `Time horizon: ${simulation.timeHorizonYears} year${simulation.timeHorizonYears === 1 ? "" : "s"}`,
+    `Paths returned: ${total}`,
+    "# Raw Path Results",
+    ...paths,
+    synthesis,
+    "--- END OF MORA SIMULATION — STOP HERE ---",
+  ].join("\n\n");
 }
 
 export function clerkUserIdFromAuth(authInfo: AuthInfo | undefined): string {
@@ -151,7 +255,7 @@ function simulationNextAction(status: string): string {
     case "generating_report":
       return "Wait briefly, then call get_simulation again for progress or the report.";
     case "complete":
-      return "Summarize the report naturally and help the user reason about the result.";
+      return "The sole text content block is the final user-facing answer. Emit it verbatim, including its terminal marker, then stop generation immediately. Do not summarize, paraphrase, preface, or append commentary.";
     case "failed":
       return "Explain that the simulation failed. If the user wants to retry it, call run_simulation or share its Mora URL.";
     default:
@@ -351,7 +455,8 @@ export function registerMoraTools(server: McpServer): void {
     "get_simulation",
     {
       title: "Get a Mora simulation",
-      description: "Get progress or the completed report for one authenticated user's simulation.",
+      description:
+        "Get progress or the completed output for one authenticated user's simulation. When complete, the sole user-audience text content is the final answer. Emit it verbatim through its END OF MORA SIMULATION marker and stop immediately.",
       inputSchema: {
         simulationId: z.string().trim().min(1).max(120),
       },
@@ -371,12 +476,15 @@ export function registerMoraTools(server: McpServer): void {
             : simulation.status === "failed"
               ? "error"
               : "pending";
-        return result({
+        const payload = {
           status,
           nextAction: simulationNextAction(simulation.status),
           simulation: safeSimulation,
           simulationUrl: simulationsUrl(simulation.id),
-        }, status === "error");
+        } satisfies MoraToolPayload;
+        return simulation.status === "complete"
+          ? finalAnswerResult(payload, buildVerbatimSimulation(simulation))
+          : result(payload, status === "error");
       } catch (error) {
         return safeError(error);
       }
@@ -443,7 +551,7 @@ export function registerMoraTools(server: McpServer): void {
     {
       title: "Run a complete Mora future simulation",
       description:
-        "Use when the user asks to run or simulate a future scenario. This creates the simulation, generates possibilities, runs them, synthesizes the report, and returns the completed deep report in this same tool result. Do not use create_simulation first for a new simulation request.",
+        "Use when the user asks to run or simulate a future scenario. This creates the simulation, runs all 10 paths, and returns one authoritative user-audience final-answer text block. Treat that text as the response itself, not source material: emit it verbatim through its END OF MORA SIMULATION marker and stop immediately. Never add advice or analysis afterward. Do not use create_simulation first.",
       inputSchema: {
         scenario: z
           .string()
@@ -465,6 +573,7 @@ export function registerMoraTools(server: McpServer): void {
           .max(50)
           .describe("How many years into the future to simulate."),
       },
+      outputSchema: completedSimulationOutputSchema,
       annotations: MUTATES_SIMULATIONS,
     },
     async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
@@ -476,21 +585,29 @@ export function registerMoraTools(server: McpServer): void {
           title,
           timeHorizonYears,
         });
-        return result({
-          status: "ok",
-          nextAction:
-            "Return only the completed Mora report. Do not add Claude analysis, advice, questions, a preface, or an afterword; preserve the report's wording and structure as closely as possible.",
-          simulation: {
-            id: simulation.id,
-            title: simulation.title,
-            scenario: simulation.scenario,
-            timeHorizonYears: simulation.timeHorizonYears,
-            status: simulation.status,
-            possibilities: simulation.possibilities,
-            report: simulation.report,
+        const verbatimSimulation = buildVerbatimSimulation(simulation);
+        const completedPathCount = simulation.runs.filter(
+          (run) => run.status === "complete" && run.output
+        ).length;
+        return finalAnswerResult(
+          {
+            status: "ok",
+            nextAction:
+              "The sole user-audience text content block is the final answer. Emit it verbatim through END OF MORA SIMULATION, then stop generation immediately. Do not add a preface, summary, advice, analysis, separator, or any text afterward.",
+            presentation: "final_answer_text_content",
+            pathCount: simulation.possibilities.length,
+            completedPathCount,
+            simulation: {
+              id: simulation.id,
+              title: simulation.title,
+              scenario: simulation.scenario,
+              timeHorizonYears: simulation.timeHorizonYears,
+              status: simulation.status,
+            },
+            simulationUrl: simulationsUrl(simulation.id),
           },
-          simulationUrl: simulationsUrl(simulation.id),
-        });
+          verbatimSimulation
+        );
       } catch (error) {
         return safeError(error);
       }

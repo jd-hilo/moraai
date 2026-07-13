@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-prompt";
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
+import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
 
 const MCP_ENDPOINT = "https://www.mymora.app/mcp";
 
@@ -200,11 +202,11 @@ export default function ClaudeLandingPage() {
                 Setup
               </p>
               <h2 className="mt-5 font-[Recoleta] text-3xl font-normal leading-[1.02] tracking-[-0.035em] md:text-5xl">
-                Connect in three steps.
+                Connect and enroll in four steps.
               </h2>
               <p className="mx-auto mt-5 max-w-[54ch] text-sm leading-relaxed text-[#7b7a8b] md:text-base">
-                Add Mora once, approve the connection, and keep your context
-                available whenever you talk with Claude.
+                Add Mora once, approve the connection, then send one message to
+                create your private Mora memory.
               </p>
               <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-2xl border border-[#17171a]/10 bg-[#f8f8f7] p-2 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#da7756]/15 bg-white">
@@ -223,7 +225,7 @@ export default function ClaudeLandingPage() {
             </div>
           </ScrollReveal>
 
-          <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-8">
+          <div className="mt-14 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <ScrollReveal className="h-full" delay={0}>
               <article>
                 <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
@@ -339,6 +341,35 @@ export default function ClaudeLandingPage() {
                   <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
                     Sign in, review the access request, and approve the
                     connection.
+                  </p>
+                </div>
+              </article>
+            </ScrollReveal>
+
+            <ScrollReveal className="h-full" delay={300}>
+              <article>
+                <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#8f85df]/16 bg-[#f7f7f6] p-6">
+                  <div className="w-full max-w-[330px] rounded-[1.4rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_20px_50px_-35px_rgba(35,32,30,0.35)]">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#7b73cf]">
+                      New message to Claude
+                    </p>
+                    <p className="mt-4 text-sm leading-relaxed text-[#35343b]">
+                      “{CLAUDE_ENROLLMENT_PROMPT}”
+                    </p>
+                    <div className="mt-5 flex justify-end">
+                      <CopyEnrollmentPrompt compact />
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-7">
+                  <span className="font-mono text-xs text-[#9a98a5]">04</span>
+                  <h3 className="mt-4 font-[Recoleta] text-2xl font-normal tracking-[-0.03em]">
+                    Type “Enroll me.”
+                  </h3>
+                  <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
+                    Send the message above in a new Claude chat. No slash command
+                    is required. Claude will use only context it can access and
+                    tell you what was saved.
                   </p>
                 </div>
               </article>
