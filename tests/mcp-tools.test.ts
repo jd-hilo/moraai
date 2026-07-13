@@ -54,6 +54,7 @@ interface RegisteredTool {
     isError?: boolean;
     content: Array<{ text: string }>;
     structuredContent?: Record<string, unknown>;
+    _meta?: Record<string, unknown>;
   }>;
 }
 
@@ -267,7 +268,11 @@ describe("MCP tool surface", () => {
         timeHorizonYears: 3,
       }
     );
-    const payload = response.structuredContent!;
+    expect(response.structuredContent).toEqual({
+      status: "ok",
+      presentation: "mcp_app",
+    });
+    const payload = response._meta!["mora/simulationResult"] as Record<string, unknown>;
     expect(payload.status).toBe("ok");
     expect(payload.simulation).toMatchObject({ status: "complete" });
     expect(payload).toMatchObject({
@@ -291,6 +296,7 @@ describe("MCP tool surface", () => {
     expect(response.content[0].text).toBe("Done — your 10 Mora pathways are shown above.");
     expect(response.content[0].text).not.toContain("RAW PATH");
     expect(response.content[0].text).not.toContain("A considered move is likely to work.");
+    expect(JSON.stringify(response.structuredContent)).not.toContain("RAW PATH");
     expect(payload.nextAction).toContain("Stop immediately");
     expect(tools.get("simulate_future")?.config.outputSchema).toBeDefined();
   });
