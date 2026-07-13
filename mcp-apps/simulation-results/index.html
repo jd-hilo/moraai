@@ -32,13 +32,13 @@
       * { box-sizing: border-box; }
       body { margin: 0; background: var(--bg); color: var(--text); }
       button { font: inherit; }
-      .shell { min-height: 220px; max-height: 720px; overflow: auto; }
+      .shell { min-height: 320px; max-height: 760px; overflow: auto; }
       .header {
         position: sticky;
         top: 0;
         z-index: 1;
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 16px;
         padding: 20px 22px 16px;
         background: color-mix(in srgb, var(--bg) 92%, transparent);
@@ -48,30 +48,46 @@
       .eyebrow { margin: 0 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
       h1 { margin: 0; font-size: 20px; line-height: 1.2; letter-spacing: -.025em; }
       .meta { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-      .toggle {
+      .count {
         align-self: center;
-        padding: 8px 11px;
-        color: var(--text);
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: transform 160ms ease, border-color 160ms ease;
+        color: var(--muted);
+        font: 600 12px/1.4 ui-monospace, "SFMono-Regular", monospace;
       }
+      .content { padding: 18px 22px 28px; }
+      .section-label { margin: 0 0 12px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+      .explorer { display: grid; grid-template-columns: minmax(220px, .85fr) minmax(0, 1.45fr); border-block: 1px solid var(--line); }
+      .path-list { max-height: 520px; overflow: auto; border-right: 1px solid var(--line); }
+      .path-row { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) 44px; gap: 10px; align-items: start; padding: 13px 14px; color: var(--text); text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; transition: background 180ms ease, transform 180ms ease; }
+      .path-row:hover { background: color-mix(in srgb, var(--accent-soft) 54%, transparent); }
+      .path-row:active { transform: translateY(1px); }
+      .path-row[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+      .path-number, .path-probability { color: var(--accent); font: 650 11px/1.5 ui-monospace, "SFMono-Regular", monospace; }
+      .path-copy { min-width: 0; display: grid; gap: 4px; }
+      .path-copy strong { overflow: hidden; font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+      .path-copy small { display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+      .path-probability { justify-self: end; color: var(--text); }
+      .path-detail { min-height: 390px; padding: 24px 26px 28px; background: var(--surface); }
+      .detail-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+      .detail-kicker { margin: 0 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+      .detail-heading h2 { margin: 0; font-size: 19px; line-height: 1.25; letter-spacing: -.02em; }
+      .probability { padding: 5px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 5px; font: 650 11px/1.4 ui-monospace, "SFMono-Regular", monospace; }
+      .premise { margin: 18px 0 0; padding: 12px 0 12px 14px; color: var(--muted); border-left: 2px solid var(--line); font-size: 12px; line-height: 1.55; }
+      .narrative { margin: 18px 0 0; color: var(--text); font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+      .detail-footer { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; padding-top: 13px; color: var(--muted); border-top: 1px solid var(--line); font-size: 11px; }
+      .detail-footer strong { color: var(--text); font-weight: 600; }
+      .context-note { margin-left: auto; color: var(--accent); }
+      .synthesis-control { display: flex; justify-content: flex-end; margin-top: 14px; }
+      .toggle { padding: 8px 11px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease; }
       .toggle:hover { border-color: var(--accent); }
       .toggle:active { transform: translateY(1px); }
-      .content { padding: 18px 22px 26px; }
-      .section-label { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-      .paths { display: grid; gap: 9px; }
-      details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: clip; }
-      summary { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 14px 15px; cursor: pointer; list-style: none; }
-      summary::-webkit-details-marker { display: none; }
-      .path-title { font-size: 14px; font-weight: 650; line-height: 1.35; }
-      .path-index { color: var(--accent); font: 600 12px/1.4 ui-monospace, "SFMono-Regular", monospace; }
-      .path-body, .synthesis-body { margin: 0; padding: 0 15px 16px; color: var(--muted); font-size: 13px; line-height: 1.62; white-space: pre-wrap; }
-      .synthesis { margin-top: 20px; padding: 17px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; }
-      .synthesis h2 { margin: 0 0 10px; font-size: 16px; letter-spacing: -.015em; }
-      .synthesis-body { padding: 0; color: var(--text); }
+      .synthesis { margin-top: 14px; padding: 20px; background: var(--accent-soft); border-left: 3px solid var(--accent); }
+      .synthesis h2 { margin: 0 0 14px; font-size: 16px; letter-spacing: -.015em; }
+      .synthesis-body { color: var(--text); font-size: 13px; line-height: 1.6; }
+      .synthesis-intro p { margin: 0 0 10px; }
+      .synthesis-intro .verdict { font-weight: 650; }
+      .synthesis-body section { margin-top: 16px; }
+      .synthesis-body h3 { margin: 0 0 7px; font-size: 12px; }
+      .synthesis-body ul { margin: 0; padding-left: 18px; color: var(--muted); }
       .state { padding: 28px 22px; }
       .state-line { width: 72%; height: 12px; margin: 10px 0; border-radius: 6px; background: var(--line); animation: pulse 1.4s ease-in-out infinite; }
       .state-line.short { width: 42%; }
@@ -81,8 +97,11 @@
       @media (prefers-reduced-motion: reduce) { .state-line { animation: none; } }
       @media (max-width: 560px) {
         .header { grid-template-columns: 1fr; padding: 17px 16px 14px; }
-        .toggle { justify-self: start; }
         .content { padding: 15px 16px 22px; }
+        .explorer { grid-template-columns: 1fr; }
+        .path-list { max-height: 270px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .path-detail { min-height: 0; padding: 20px 16px 24px; }
+        .context-note { width: 100%; margin-left: 0; }
       }
     </style>
   </head>
@@ -97,18 +116,24 @@
       <section id="results" hidden>
         <header class="header">
           <div>
-            <p class="eyebrow">Complete Mora output</p>
+            <p class="eyebrow">Mora path explorer</p>
             <h1 id="title">Simulation results</h1>
             <p id="meta" class="meta"></p>
           </div>
-          <button id="toggle" class="toggle" type="button">Expand all paths</button>
+          <span id="count" class="count"></span>
         </header>
         <div class="content">
-          <p id="path-label" class="section-label">Raw path results</p>
-          <div id="paths" class="paths"></div>
-          <section class="synthesis">
+          <p class="section-label">10 raw pathways — select one to inspect</p>
+          <div class="explorer">
+            <nav id="path-list" class="path-list" aria-label="Simulation pathways"></nav>
+            <article id="path-detail" class="path-detail" aria-live="polite"></article>
+          </div>
+          <div class="synthesis-control">
+            <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false">View Mora synthesis</button>
+          </div>
+          <section id="synthesis-panel" class="synthesis" hidden>
             <h2>Mora synthesis</h2>
-            <pre id="synthesis" class="synthesis-body"></pre>
+            <div id="synthesis" class="synthesis-body"></div>
           </section>
         </div>
       </section>
