@@ -107,10 +107,27 @@ function finalAnswerResult(payload: MoraToolPayload, verbatimText: string) {
   };
 }
 
+function appFirstSimulationResult(payload: MoraToolPayload) {
+  return {
+    isError: false,
+    // MCP Apps reserves content for model narration. Keep it intentionally
+    // minimal; the complete simulation is delivered to the embedded view via
+    // structuredContent so the host does not invite the model to reinterpret it.
+    content: [
+      {
+        type: "text" as const,
+        text: "Done — your 10 Mora pathways are shown above.",
+        annotations: { audience: ["user" as const], priority: 1 },
+      },
+    ],
+    structuredContent: payload,
+  };
+}
+
 const completedSimulationOutputSchema = {
   status: z.literal("ok"),
   nextAction: z.string(),
-  presentation: z.literal("final_answer_text_content"),
+  presentation: z.literal("mcp_app"),
   pathCount: z.number().int().nonnegative(),
   completedPathCount: z.number().int().nonnegative(),
   simulation: z.object({
@@ -120,6 +137,28 @@ const completedSimulationOutputSchema = {
     timeHorizonYears: z.number().int(),
     status: z.literal("complete"),
   }),
+  paths: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      probability: z.number(),
+      runStatus: z.string(),
+      output: z.string(),
+      confidence: z.number().nullable(),
+    })
+  ),
+  report: z
+    .object({
+      verdict: z.string(),
+      overallConfidence: z.number(),
+      topPossibilityId: z.string(),
+      summary: z.string(),
+      outcomes: z.object({ title: z.string(), points: z.array(z.string()) }),
+      risks: z.object({ title: z.string(), points: z.array(z.string()) }),
+      insights: z.object({ title: z.string(), points: z.array(z.string()) }),
+    })
+    .nullable(),
   simulationUrl: z.string(),
 };
 
@@ -584,7 +623,7 @@ export function registerMoraTools(server: McpServer): void {
     {
       title: "Run a complete Mora future simulation",
       description:
-        "Use when the user asks to run or simulate a future scenario. This creates the simulation, runs all 10 paths, and returns one authoritative user-audience final-answer text block. Treat that text as the response itself, not source material: emit it verbatim through its END OF MORA SIMULATION marker and stop immediately. Never add advice or analysis afterward. Do not use create_simulation first.",
+        "Use when the user asks to run or simulate a future scenario. This creates the simulation, runs all 10 paths, and renders the complete raw result in an interactive Mora app. After success, reply exactly: ‘Done — your 10 Mora pathways are shown above.’ Do not summarize, critique, interpret, compare, advise, or mention any individual path unless the user asks in a later message. Do not use create_simulation first.",
       inputSchema: {
         scenario: z
           .string()
@@ -609,7 +648,10 @@ export function registerMoraTools(server: McpServer): void {
       outputSchema: completedSimulationOutputSchema,
       annotations: MUTATES_SIMULATIONS,
       _meta: {
-        ui: { resourceUri: SIMULATION_RESULTS_RESOURCE_URI },
+        ui: {
+          resourceUri: SIMULATION_RESULTS_RESOURCE_URI,
+          visibility: ["model", "app"],
+        },
       },
     },
     async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
@@ -621,29 +663,41 @@ export function registerMoraTools(server: McpServer): void {
           title,
           timeHorizonYears,
         });
-        const verbatimSimulation = buildVerbatimSimulation(simulation);
         const completedPathCount = simulation.runs.filter(
           (run) => run.status === "complete" && run.output
         ).length;
-        return finalAnswerResult(
-          {
-            status: "ok",
-            nextAction:
-              "The sole user-audience text content block is the final answer. Emit it verbatim through END OF MORA SIMULATION, then stop generation immediately. Do not add a preface, summary, advice, analysis, separator, or any text afterward.",
-            presentation: "final_answer_text_content",
-            pathCount: simulation.possibilities.length,
-            completedPathCount,
-            simulation: {
-              id: simulation.id,
-              title: simulation.title,
-              scenario: simulation.scenario,
-              timeHorizonYears: simulation.timeHorizonYears,
-              status: simulation.status,
-            },
-            simulationUrl: simulationsUrl(simulation.id),
-          },
-          verbatimSimulation
+        const runsByPossibility = new Map(
+          simulation.runs.map((run) => [run.possibilityId, run] as const)
         );
+        return appFirstSimulationResult({
+          status: "ok",
+          nextAction:
+            "Reply exactly: Done — your 10 Mora pathways are shown above. Stop immediately. Do not analyze the simulation until the user asks a follow-up question.",
+          presentation: "mcp_app",
+          pathCount: simulation.possibilities.length,
+          completedPathCount,
+          simulation: {
+            id: simulation.id,
+            title: simulation.title,
+            scenario: simulation.scenario,
+            timeHorizonYears: simulation.timeHorizonYears,
+            status: simulation.status,
+          },
+          paths: simulation.possibilities.map((possibility) => {
+            const run = runsByPossibility.get(possibility.id);
+            return {
+              id: possibility.id,
+              title: possibility.title,
+              description: possibility.description,
+              probability: possibility.probability,
+              runStatus: run?.status ?? "missing",
+              output: run?.output ?? "No completed narrative was returned for this path.",
+              confidence: run?.confidence ?? null,
+            };
+          }),
+          report: simulation.report,
+          simulationUrl: simulationsUrl(simulation.id),
+        });
       } catch (error) {
         return safeError(error);
       }

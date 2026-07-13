@@ -169,7 +169,10 @@ describe("MCP tool surface", () => {
       });
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
-      ui: { resourceUri: "ui://mora/simulation-results.html" },
+      ui: {
+        resourceUri: "ui://mora/simulation-results.html",
+        visibility: ["model", "app"],
+      },
       "ui/resourceUri": "ui://mora/simulation-results.html",
     });
   });
@@ -268,25 +271,27 @@ describe("MCP tool surface", () => {
     expect(payload.status).toBe("ok");
     expect(payload.simulation).toMatchObject({ status: "complete" });
     expect(payload).toMatchObject({
-      presentation: "final_answer_text_content",
+      presentation: "mcp_app",
       pathCount: 10,
       completedPathCount: 10,
     });
+    const paths = payload.paths as Array<Record<string, unknown>>;
+    expect(paths).toHaveLength(10);
+    for (let index = 1; index <= 10; index += 1) {
+      expect(paths[index - 1]).toMatchObject({
+        title: `Path ${index}`,
+        output: `RAW PATH ${index}: exact generated narrative`,
+      });
+    }
+    expect(payload.report).toMatchObject({
+      verdict: "A considered move is likely to work.",
+    });
 
     expect(response.content).toHaveLength(1);
-    const verbatim = response.content[0].text;
-    expect(verbatim).toContain("Paths returned: 10");
-    expect(verbatim.match(/^## Path \d+ of 10:/gm)).toHaveLength(10);
-    for (let index = 1; index <= 10; index += 1) {
-      expect(verbatim).toContain(`RAW PATH ${index}: exact generated narrative`);
-    }
-    expect(verbatim.indexOf("# Raw Path Results")).toBeLessThan(
-      verbatim.indexOf("# Mora Synthesis")
-    );
-    expect(verbatim).toContain("A considered move is likely to work.");
-    expect(verbatim).toMatch(/--- END OF MORA SIMULATION — STOP HERE ---$/);
-    expect(payload.nextAction).toContain("sole user-audience text content block");
-    expect(payload.nextAction).toContain("Do not add");
+    expect(response.content[0].text).toBe("Done — your 10 Mora pathways are shown above.");
+    expect(response.content[0].text).not.toContain("RAW PATH");
+    expect(response.content[0].text).not.toContain("A considered move is likely to work.");
+    expect(payload.nextAction).toContain("Stop immediately");
     expect(tools.get("simulate_future")?.config.outputSchema).toBeDefined();
   });
 
