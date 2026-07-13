@@ -170,6 +170,7 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: { resourceUri: "ui://mora/simulation-results.html" },
+      "ui/resourceUri": "ui://mora/simulation-results.html",
     });
   });
 
