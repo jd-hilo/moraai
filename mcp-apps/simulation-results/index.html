@@ -5,88 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mora simulation results</title>
     <style>
-      :root {
-        color-scheme: light dark;
-        font-family: Geist, "DM Sans", system-ui, sans-serif;
-        --bg: #f7f7f5;
-        --surface: #ffffff;
-        --text: #181817;
-        --muted: #686864;
-        --line: #deded8;
-        --accent: #a44f2b;
-        --accent-soft: #f4e8e1;
+      @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap");
+
+      @font-face {
+        font-family: "Recoleta";
+        src: url("https://www.mymora.app/fonts/Recoleta-Regular.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
       }
 
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #191918;
-          --surface: #222220;
-          --text: #f2f2ed;
-          --muted: #aaa9a2;
-          --line: #3c3c38;
-          --accent: #e2916d;
-          --accent-soft: #3b2820;
-        }
+      :root {
+        color-scheme: light;
+        font-family: "DM Sans", system-ui, sans-serif;
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-subtle: #f9f9f9;
+        --surface-active: #f2eff8;
+        --text: #0d0d0d;
+        --muted: #6e6e80;
+        --quiet: #9a9aa3;
+        --line: #e5e5e5;
+        --accent: #8f85df;
+        --accent-deep: #7268c7;
+        --accent-soft: #f3effa;
+        --pink: #ffc6e1;
       }
 
       * { box-sizing: border-box; }
-      body { margin: 0; background: var(--bg); color: var(--text); }
+      html { background: var(--bg); }
+      body { margin: 0; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
       button { font: inherit; }
-      .shell { min-height: 320px; max-height: 760px; overflow: auto; }
+      .shell { min-height: 320px; max-height: 760px; overflow: auto; background: var(--bg); }
       .header {
         position: sticky;
         top: 0;
         z-index: 1;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 16px;
-        padding: 20px 22px 16px;
-        background: color-mix(in srgb, var(--bg) 92%, transparent);
+        gap: 24px;
+        padding: 24px 26px 20px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, .94);
         border-bottom: 1px solid var(--line);
         backdrop-filter: blur(14px);
       }
-      .eyebrow { margin: 0 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-      h1 { margin: 0; font-size: 20px; line-height: 1.2; letter-spacing: -.025em; }
-      .meta { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-      .count {
-        align-self: center;
-        color: var(--muted);
-        font: 600 12px/1.4 ui-monospace, "SFMono-Regular", monospace;
+      .header::after {
+        position: absolute;
+        top: -80px;
+        right: 8%;
+        width: 280px;
+        height: 180px;
+        background: radial-gradient(ellipse at center, rgba(198, 166, 240, .24), rgba(255, 198, 225, .14) 48%, transparent 72%);
+        content: "";
+        filter: blur(22px);
+        pointer-events: none;
       }
-      .content { padding: 18px 22px 28px; }
-      .section-label { margin: 0 0 12px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-      .explorer { display: grid; grid-template-columns: minmax(220px, .85fr) minmax(0, 1.45fr); border-block: 1px solid var(--line); }
-      .path-list { max-height: 520px; overflow: auto; border-right: 1px solid var(--line); }
-      .path-row { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) 44px; gap: 10px; align-items: start; padding: 13px 14px; color: var(--text); text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; transition: background 180ms ease, transform 180ms ease; }
-      .path-row:hover { background: color-mix(in srgb, var(--accent-soft) 54%, transparent); }
+      .header-copy { position: relative; z-index: 1; min-width: 0; }
+      .brand-line { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+      .orb {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+        border: 1px solid rgba(111, 107, 201, .16);
+        border-radius: 50%;
+        background: radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%);
+        box-shadow: 0 2px 7px rgba(143, 133, 223, .24);
+      }
+      .eyebrow { margin: 0 0 7px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; }
+      h1 { margin: 0; font-family: "Recoleta", "DM Sans", sans-serif; font-size: 27px; font-weight: 400; line-height: 1.15; letter-spacing: -.025em; }
+      .meta { max-width: 680px; margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+      .count {
+        position: relative;
+        z-index: 1;
+        align-self: center;
+        padding: 7px 10px;
+        color: var(--text);
+        background: rgba(244, 244, 244, .88);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+      .content { padding: 20px 26px 28px; }
+      .section-label { margin: 0 0 12px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+      .explorer {
+        display: grid;
+        grid-template-columns: minmax(250px, .9fr) minmax(0, 1.5fr);
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(13, 13, 13, .035);
+      }
+      .path-list { max-height: 520px; overflow: auto; background: var(--surface-subtle); border-right: 1px solid var(--line); }
+      .path-row { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px; gap: 10px; align-items: start; padding: 14px 14px; color: var(--text); text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; transition: background 180ms cubic-bezier(.16, 1, .3, 1), transform 180ms cubic-bezier(.16, 1, .3, 1); }
+      .path-row:hover { background: #f4f4f4; }
+      .path-row:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--accent); outline-offset: -2px; }
       .path-row:active { transform: translateY(1px); }
-      .path-row[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
-      .path-number, .path-probability { color: var(--accent); font: 650 11px/1.5 ui-monospace, "SFMono-Regular", monospace; }
+      .path-row[aria-pressed="true"] { background: linear-gradient(90deg, rgba(198, 166, 240, .22), rgba(255, 198, 225, .1)); box-shadow: inset 3px 0 0 var(--accent); }
+      .path-number, .path-probability { color: var(--accent-deep); font-size: 11px; font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; }
       .path-copy { min-width: 0; display: grid; gap: 4px; }
-      .path-copy strong { overflow: hidden; font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-      .path-copy small { display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+      .path-copy strong { overflow: hidden; font-size: 13px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+      .path-copy small { display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
       .path-probability { justify-self: end; color: var(--text); }
-      .path-detail { min-height: 390px; padding: 24px 26px 28px; background: var(--surface); }
+      .path-detail { min-height: 390px; padding: 26px 28px 28px; background: var(--surface); }
       .detail-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
-      .detail-kicker { margin: 0 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-      .detail-heading h2 { margin: 0; font-size: 19px; line-height: 1.25; letter-spacing: -.02em; }
-      .probability { padding: 5px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 5px; font: 650 11px/1.4 ui-monospace, "SFMono-Regular", monospace; }
-      .premise { margin: 18px 0 0; padding: 12px 0 12px 14px; color: var(--muted); border-left: 2px solid var(--line); font-size: 12px; line-height: 1.55; }
-      .narrative { margin: 18px 0 0; color: var(--text); font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
-      .detail-footer { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; padding-top: 13px; color: var(--muted); border-top: 1px solid var(--line); font-size: 11px; }
+      .detail-kicker { margin: 0 0 6px; color: var(--accent-deep); font-size: 10px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+      .detail-heading h2 { margin: 0; font-family: "Recoleta", "DM Sans", sans-serif; font-size: 22px; font-weight: 400; line-height: 1.25; letter-spacing: -.018em; }
+      .probability { padding: 6px 9px; color: var(--accent-deep); background: var(--accent-soft); border: 1px solid rgba(143, 133, 223, .13); border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1.4; font-variant-numeric: tabular-nums; }
+      .premise { margin: 19px 0 0; padding: 13px 15px; color: var(--muted); background: var(--surface-subtle); border-radius: 10px; font-size: 12px; line-height: 1.55; }
+      .narrative { margin: 20px 0 0; color: var(--text); font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
+      .detail-footer { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 24px; padding-top: 14px; color: var(--muted); border-top: 1px solid var(--line); font-size: 11px; }
       .detail-footer strong { color: var(--text); font-weight: 600; }
-      .context-note { margin-left: auto; color: var(--accent); }
+      .context-note { margin-left: auto; color: var(--accent-deep); }
       .synthesis-control { display: flex; justify-content: flex-end; margin-top: 14px; }
-      .toggle { padding: 8px 11px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease; }
-      .toggle:hover { border-color: var(--accent); }
+      .toggle { padding: 8px 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: transform 160ms ease, background 160ms ease, color 160ms ease; }
+      .toggle:hover { color: var(--text); background: #f4f4f4; }
+      .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       .toggle:active { transform: translateY(1px); }
-      .synthesis { margin-top: 14px; padding: 20px; background: var(--accent-soft); border-left: 3px solid var(--accent); }
-      .synthesis h2 { margin: 0 0 14px; font-size: 16px; letter-spacing: -.015em; }
+      .synthesis { margin-top: 14px; padding: 21px; background: linear-gradient(135deg, rgba(198, 166, 240, .16), rgba(255, 198, 225, .13)); border: 1px solid rgba(143, 133, 223, .15); border-radius: 16px; }
+      .synthesis h2 { margin: 0 0 14px; font-family: "Recoleta", "DM Sans", sans-serif; font-size: 19px; font-weight: 400; letter-spacing: -.015em; }
       .synthesis-body { color: var(--text); font-size: 13px; line-height: 1.6; }
       .synthesis-intro p { margin: 0 0 10px; }
-      .synthesis-intro .verdict { font-weight: 650; }
+      .synthesis-intro .verdict { font-weight: 600; }
       .synthesis-body section { margin-top: 16px; }
-      .synthesis-body h3 { margin: 0 0 7px; font-size: 12px; }
+      .synthesis-body h3 { margin: 0 0 7px; font-size: 12px; font-weight: 600; }
       .synthesis-body ul { margin: 0; padding-left: 18px; color: var(--muted); }
       .state { padding: 28px 22px; }
       .state-line { width: 72%; height: 12px; margin: 10px 0; border-radius: 6px; background: var(--line); animation: pulse 1.4s ease-in-out infinite; }
@@ -95,12 +140,13 @@
       [hidden] { display: none !important; }
       @keyframes pulse { 50% { opacity: .45; } }
       @media (prefers-reduced-motion: reduce) { .state-line { animation: none; } }
-      @media (max-width: 560px) {
+      @media (max-width: 680px) {
         .header { grid-template-columns: 1fr; padding: 17px 16px 14px; }
         .content { padding: 15px 16px 22px; }
         .explorer { grid-template-columns: 1fr; }
         .path-list { max-height: 270px; border-right: 0; border-bottom: 1px solid var(--line); }
         .path-detail { min-height: 0; padding: 20px 16px 24px; }
+        h1 { font-size: 24px; }
         .context-note { width: 100%; margin-left: 0; }
       }
     </style>
@@ -115,7 +161,8 @@
       <section id="error" class="state error" hidden></section>
       <section id="results" hidden>
         <header class="header">
-          <div>
+          <div class="header-copy">
+            <p class="brand-line"><span class="orb" aria-hidden="true"></span><span>Mora simulation</span></p>
             <p class="eyebrow">Mora path explorer</p>
             <h1 id="title">Simulation results</h1>
             <p id="meta" class="meta"></p>

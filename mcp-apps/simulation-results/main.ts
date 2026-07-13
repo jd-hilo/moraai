@@ -69,7 +69,7 @@ function isSimulationResult(value: unknown): value is SimulationResult {
     typeof candidate.simulation?.title === "string";
 }
 
-function renderPath(path: SimulationPath, index: number, total: number) {
+function renderPath(path: SimulationPath, index: number, total: number, shareWithModel = false) {
   const confidence = path.confidence === null ? "Not reported" : `${path.confidence}%`;
   pathDetail.replaceChildren();
 
@@ -89,11 +89,16 @@ function renderPath(path: SimulationPath, index: number, total: number) {
 
   const footer = document.createElement("div");
   footer.className = "detail-footer";
-  footer.innerHTML = `<span>Run status: <strong></strong></span><span>Path confidence: <strong></strong></span><span class="context-note">Selected for your next Claude message</span>`;
+  footer.innerHTML = `<span>Run status: <strong></strong></span><span>Path confidence: <strong></strong></span><span class="context-note"></span>`;
   const values = footer.querySelectorAll("strong");
   values[0].textContent = path.runStatus;
   values[1].textContent = confidence;
+  footer.querySelector<HTMLElement>(".context-note")!.textContent = shareWithModel
+    ? "Selected for your next Claude message"
+    : "Select this path to discuss it with Claude";
   pathDetail.append(heading, premise, narrative, footer);
+
+  if (!shareWithModel) return;
 
   void app.updateModelContext({
     content: [
@@ -169,7 +174,7 @@ function renderSimulation(result: SimulationResult) {
     button.addEventListener("click", () => {
       pathList.querySelectorAll(".path-row").forEach((row) => row.setAttribute("aria-pressed", "false"));
       button.setAttribute("aria-pressed", "true");
-      renderPath(path, index, result.paths.length);
+      renderPath(path, index, result.paths.length, true);
     });
     pathList.append(button);
   });
@@ -190,10 +195,11 @@ synthesisToggle.addEventListener("click", () => {
 
 const app = new App({ name: "Mora simulation results", version: "1.0.0" });
 app.ontoolresult = (toolResult) => {
-  if (!isSimulationResult(toolResult.structuredContent)) {
+  const simulationResult = toolResult._meta?.["mora/simulationResult"];
+  if (!isSimulationResult(simulationResult)) {
     showError("Mora did not return structured simulation paths.");
     return;
   }
-  renderSimulation(toolResult.structuredContent);
+  renderSimulation(simulationResult);
 };
 void app.connect();

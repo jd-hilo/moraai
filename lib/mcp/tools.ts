@@ -110,9 +110,9 @@ function finalAnswerResult(payload: MoraToolPayload, verbatimText: string) {
 function appFirstSimulationResult(payload: MoraToolPayload) {
   return {
     isError: false,
-    // MCP Apps reserves content for model narration. Keep it intentionally
-    // minimal; the complete simulation is delivered to the embedded view via
-    // structuredContent so the host does not invite the model to reinterpret it.
+    // Keep both model-visible channels sparse. Some hosts include structured
+    // content in the current model turn, so the full simulation belongs in
+    // app-only result metadata.
     content: [
       {
         type: "text" as const,
@@ -120,46 +120,19 @@ function appFirstSimulationResult(payload: MoraToolPayload) {
         annotations: { audience: ["user" as const], priority: 1 },
       },
     ],
-    structuredContent: payload,
+    structuredContent: {
+      status: "ok",
+      presentation: "mcp_app",
+    },
+    _meta: {
+      "mora/simulationResult": payload,
+    },
   };
 }
 
 const completedSimulationOutputSchema = {
   status: z.literal("ok"),
-  nextAction: z.string(),
   presentation: z.literal("mcp_app"),
-  pathCount: z.number().int().nonnegative(),
-  completedPathCount: z.number().int().nonnegative(),
-  simulation: z.object({
-    id: z.string(),
-    title: z.string(),
-    scenario: z.string(),
-    timeHorizonYears: z.number().int(),
-    status: z.literal("complete"),
-  }),
-  paths: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      probability: z.number(),
-      runStatus: z.string(),
-      output: z.string(),
-      confidence: z.number().nullable(),
-    })
-  ),
-  report: z
-    .object({
-      verdict: z.string(),
-      overallConfidence: z.number(),
-      topPossibilityId: z.string(),
-      summary: z.string(),
-      outcomes: z.object({ title: z.string(), points: z.array(z.string()) }),
-      risks: z.object({ title: z.string(), points: z.array(z.string()) }),
-      insights: z.object({ title: z.string(), points: z.array(z.string()) }),
-    })
-    .nullable(),
-  simulationUrl: z.string(),
 };
 
 function formatSection(section: SimulationReport["outcomes"]): string {
@@ -330,6 +303,17 @@ export function registerMoraTools(server: McpServer): void {
             path.join(process.cwd(), "mcp-apps/simulation-results/dist/index.html"),
             "utf8"
           ),
+          _meta: {
+            ui: {
+              csp: {
+                resourceDomains: [
+                  "https://www.mymora.app",
+                  "https://fonts.googleapis.com",
+                  "https://fonts.gstatic.com",
+                ],
+              },
+            },
+          },
         },
       ],
     })
