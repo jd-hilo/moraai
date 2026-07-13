@@ -1,5 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import {
+  registerAppResource,
+  registerAppTool,
+  RESOURCE_MIME_TYPE,
+} from "@modelcontextprotocol/ext-apps/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -55,7 +60,6 @@ const MUTATES_SIMULATIONS = {
 } as const;
 
 const SIMULATION_RESULTS_RESOURCE_URI = "ui://mora/simulation-results.html";
-const MCP_APP_MIME_TYPE = "text/html;profile=mcp-app";
 
 export interface MoraToolPayload {
   status: "ok" | "setup_required" | "no_match" | "pending" | "error";
@@ -269,19 +273,20 @@ function simulationNextAction(status: string): string {
 }
 
 export function registerMoraTools(server: McpServer): void {
-  server.registerResource(
+  registerAppResource(
+    server,
     "mora-simulation-results",
     SIMULATION_RESULTS_RESOURCE_URI,
     {
       title: "Mora simulation results",
       description: "Displays every raw simulation path before Mora's synthesis.",
-      mimeType: MCP_APP_MIME_TYPE,
+      mimeType: RESOURCE_MIME_TYPE,
     },
     async () => ({
       contents: [
         {
           uri: SIMULATION_RESULTS_RESOURCE_URI,
-          mimeType: MCP_APP_MIME_TYPE,
+          mimeType: RESOURCE_MIME_TYPE,
           text: await readFile(
             path.join(process.cwd(), "mcp-apps/simulation-results/dist/index.html"),
             "utf8"
@@ -573,7 +578,8 @@ export function registerMoraTools(server: McpServer): void {
     }
   );
 
-  server.registerTool(
+  registerAppTool(
+    server,
     "simulate_future",
     {
       title: "Run a complete Mora future simulation",
