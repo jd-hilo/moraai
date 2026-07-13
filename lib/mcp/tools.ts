@@ -330,6 +330,17 @@ export function registerMoraTools(server: McpServer): void {
             path.join(process.cwd(), "mcp-apps/simulation-results/dist/index.html"),
             "utf8"
           ),
+          _meta: {
+            ui: {
+              csp: {
+                resourceDomains: [
+                  "https://www.mymora.app",
+                  "https://fonts.googleapis.com",
+                  "https://fonts.gstatic.com",
+                ],
+              },
+            },
+          },
         },
       ],
     })
