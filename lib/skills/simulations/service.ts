@@ -229,7 +229,16 @@ export async function simulateFutureForUser(
     throw error;
   }
 
-  return getSimulationForUser(user.id, simulation.id);
+  const completed = await getSimulationForUser(user.id, simulation.id);
+  if (completed.status !== "complete" || !completed.report) {
+    throw new SimulationServiceError(
+      "SIMULATION_FAILED",
+      500,
+      "Simulation could not produce a completed report.",
+      { simulationId: simulation.id }
+    );
+  }
+  return completed;
 }
 
 export async function runSimulationForUser(

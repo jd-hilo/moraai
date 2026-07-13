@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-prompt";
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
 import { ScrollToSetup } from "@/components/connect/scroll-to-setup";
+import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
 
 const PRODUCTION_MCP_ENDPOINT = "https://www.mymora.app/mcp";
 
@@ -127,11 +129,11 @@ export default function ConnectClaudePage() {
                 Setup
               </p>
               <h2 className="mt-5 font-[Recoleta] text-3xl font-normal leading-[1.02] tracking-[-0.035em] md:text-5xl">
-                Connect in three steps.
+                Connect and enroll in four steps.
               </h2>
               <p className="mx-auto mt-5 max-w-[54ch] text-sm leading-relaxed text-[#7b7a8b] md:text-base">
-                Add Mora once, approve the connection, and keep your context
-                available whenever you talk with Claude.
+                Add Mora once, approve the connection, then send one message to
+                create your private Mora memory.
               </p>
               <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-2xl border border-[#17171a]/10 bg-[#f8f8f7] p-2 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#da7756]/15 bg-white">
@@ -150,7 +152,7 @@ export default function ConnectClaudePage() {
             </div>
           </ScrollReveal>
 
-          <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-8">
+          <div className="mt-14 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <ScrollReveal className="h-full" delay={0}>
               <article>
               <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
@@ -269,6 +271,35 @@ export default function ConnectClaudePage() {
               </div>
               </article>
             </ScrollReveal>
+
+            <ScrollReveal className="h-full" delay={300}>
+              <article>
+                <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#8f85df]/16 bg-[#f7f7f6] p-6">
+                  <div className="w-full max-w-[330px] rounded-[1.4rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_20px_50px_-35px_rgba(35,32,30,0.35)]">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#7b73cf]">
+                      New message to Claude
+                    </p>
+                    <p className="mt-4 text-sm leading-relaxed text-[#35343b]">
+                      “{CLAUDE_ENROLLMENT_PROMPT}”
+                    </p>
+                    <div className="mt-5 flex justify-end">
+                      <CopyEnrollmentPrompt compact />
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-7">
+                  <span className="font-mono text-xs text-[#9a98a5]">04</span>
+                  <h3 className="mt-4 font-[Recoleta] text-2xl font-normal tracking-[-0.03em]">
+                    Type “Enroll me.”
+                  </h3>
+                  <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
+                    Send the message above in a new Claude chat. No slash command
+                    is required. Claude will use only context it can access and
+                    tell you what was saved.
+                  </p>
+                </div>
+              </article>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -342,24 +373,25 @@ export default function ConnectClaudePage() {
                 Create your Mora twin with one simple message.
               </h2>
               <p className="mt-5 max-w-[58ch] text-base leading-relaxed text-[#7b7a8b]">
-                After you connect, ask Claude “How do I use Mora?” It will ask
-                for permission to turn the context it can access into your
-                Mora memory. You can also import history later.
+                Send the enrollment message in Claude after connecting. It
+                includes your approval, so Claude can create your Mora memory
+                from context it is allowed to access and confirm what was saved.
+                You can also import history later.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 lg:justify-end">
-              <Link
-                href="/sign-up?source=claude"
-                className="rounded-full bg-[#17171a] px-6 py-3 text-sm font-semibold text-white transition duration-300 hover:bg-[#303036] active:scale-[0.98]"
-              >
-                Create account
-              </Link>
-              <Link
-                href="/onboarding?source=claude"
-                className="rounded-full border border-[#17171a]/15 bg-white px-6 py-3 text-sm font-semibold text-[#242329] transition duration-300 hover:border-[#8f85df]/30 hover:text-[#6f6bc9] active:scale-[0.98]"
-              >
-                Import history instead
-              </Link>
+            <div className="rounded-[1.5rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_18px_45px_-38px_rgba(35,32,30,0.3)]">
+              <p className="font-mono text-sm leading-relaxed text-[#35343b]">
+                {CLAUDE_ENROLLMENT_PROMPT}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <CopyEnrollmentPrompt />
+                <Link
+                  href="/onboarding?source=claude"
+                  className="rounded-full border border-[#17171a]/15 bg-white px-6 py-3 text-sm font-semibold text-[#242329] transition duration-300 hover:border-[#8f85df]/30 hover:text-[#6f6bc9] active:scale-[0.98]"
+                >
+                  Import history instead
+                </Link>
+              </div>
             </div>
           </div>
         </ScrollReveal>

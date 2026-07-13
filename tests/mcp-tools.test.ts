@@ -45,10 +45,11 @@ vi.mock("@/lib/mcp/enrollment", () => ({
 import { registerMoraTools } from "@/lib/mcp/tools";
 
 interface RegisteredTool {
-  config: { annotations?: Record<string, boolean> };
+  config: { annotations?: Record<string, boolean>; outputSchema?: unknown };
   callback: (input: never, context: { authInfo: AuthInfo }) => Promise<{
     isError?: boolean;
     content: Array<{ text: string }>;
+    structuredContent?: Record<string, unknown>;
   }>;
 }
 
@@ -104,8 +105,27 @@ describe("MCP tool surface", () => {
       scenario: "Move to Lisbon",
       timeHorizonYears: 3,
       status: "complete",
-      possibilities: [{ id: "likely", title: "Likely path" }],
-      report: { verdict: "A considered move is likely to work." },
+      possibilities: Array.from({ length: 10 }, (_, index) => ({
+        id: `path-${index + 1}`,
+        title: `Path ${index + 1}`,
+        description: `Premise ${index + 1}`,
+        probability: 10,
+      })),
+      runs: Array.from({ length: 10 }, (_, index) => ({
+        possibilityId: `path-${index + 1}`,
+        status: "complete",
+        output: `RAW PATH ${index + 1}: exact generated narrative`,
+        confidence: 70 + index,
+      })),
+      report: {
+        verdict: "A considered move is likely to work.",
+        overallConfidence: 79,
+        topPossibilityId: "path-1",
+        summary: "The probability-weighted synthesis.",
+        outcomes: { title: "Likely Outcomes", points: ["Outcome one"] },
+        risks: { title: "Key Risks", points: ["Risk one"] },
+        insights: { title: "What the Simulation Reveals", points: ["Insight one"] },
+      },
     });
     mocks.enrollFromClaudeMemory.mockResolvedValue({
       summary: "2 memory updates",
@@ -235,10 +255,30 @@ describe("MCP tool surface", () => {
         timeHorizonYears: 3,
       }
     );
-    const payload = JSON.parse(response.content[0].text);
+    const payload = response.structuredContent!;
     expect(payload.status).toBe("ok");
-    expect(payload.simulation.status).toBe("complete");
-    expect(payload.simulation.report.verdict).toContain("likely to work");
+    expect(payload.simulation).toMatchObject({ status: "complete" });
+    expect(payload).toMatchObject({
+      presentation: "final_answer_text_content",
+      pathCount: 10,
+      completedPathCount: 10,
+    });
+
+    expect(response.content).toHaveLength(1);
+    const verbatim = response.content[0].text;
+    expect(verbatim).toContain("Paths returned: 10");
+    expect(verbatim.match(/^## Path \d+ of 10:/gm)).toHaveLength(10);
+    for (let index = 1; index <= 10; index += 1) {
+      expect(verbatim).toContain(`RAW PATH ${index}: exact generated narrative`);
+    }
+    expect(verbatim.indexOf("# Raw Path Results")).toBeLessThan(
+      verbatim.indexOf("# Mora Synthesis")
+    );
+    expect(verbatim).toContain("A considered move is likely to work.");
+    expect(verbatim).toMatch(/--- END OF MORA SIMULATION — STOP HERE ---$/);
+    expect(payload.nextAction).toContain("sole user-audience text content block");
+    expect(payload.nextAction).toContain("Do not add");
+    expect(tools.get("simulate_future")?.config.outputSchema).toBeDefined();
   });
 
   it("returns onboarding and no-match states without leaking internal details", async () => {
@@ -270,5 +310,23 @@ describe("MCP tool surface", () => {
     expect(payload.simulation.error).toBe("Simulation failed.");
     expect(response.content[0].text).not.toContain("Provider secret");
     expect(mocks.getSimulationForUser).toHaveBeenCalledWith("mora-alpha", "sim-alpha");
+  });
+
+  it("returns a completed stored simulation as the same verbatim all-path display block", async () => {
+    const completed = await mocks.simulateFutureForUser();
+    mocks.getSimulationForUser.mockResolvedValueOnce(completed);
+    const tools = registeredTools();
+
+    const response = await tools.get("get_simulation")!.callback(
+      { simulationId: "sim-complete" } as never,
+      { authInfo }
+    );
+
+    const payload = response.structuredContent!;
+    expect(payload.nextAction).toContain("sole text content block");
+    expect(response.content).toHaveLength(1);
+    expect(response.content[0].text.match(/^## Path \d+ of 10:/gm)).toHaveLength(10);
+    expect(response.content[0].text).toContain("RAW PATH 10: exact generated narrative");
+    expect(response.content[0].text).toMatch(/--- END OF MORA SIMULATION — STOP HERE ---$/);
   });
 });

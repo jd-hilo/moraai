@@ -229,4 +229,33 @@ describe("simulation service", () => {
       expect.objectContaining({ possibilityId: "two", status: "complete" }),
     ]);
   });
+
+  it("does not report MCP-style synchronous completion when every path failed", async () => {
+    let stored = {
+      ...simulation("alpha"),
+      id: "sim-all-failed",
+      status: "generating_lenses",
+      lenses: [],
+      runs: [],
+      report: null,
+      narrative: "Keep the current job.",
+    };
+    mocks.prisma.simulation.create.mockImplementation(async ({ data }) => {
+      stored = { ...stored, ...data };
+      return { id: stored.id };
+    });
+    mocks.prisma.simulation.findUnique.mockImplementation(async () => stored);
+    mocks.prisma.simulation.update.mockImplementation(async ({ data }) => {
+      stored = { ...stored, ...data };
+      return stored;
+    });
+    mocks.runLensSimulation.mockRejectedValue(new Error("provider unavailable"));
+
+    await expect(
+      simulateFutureForUser(
+        { id: "alpha", name: "Alpha", vaultPath: "vaults/alpha/" } as never,
+        { scenario: "Move to Lisbon", timeHorizonYears: 3 }
+      )
+    ).rejects.toMatchObject({ code: "SIMULATION_FAILED", status: 500 });
+  });
 });
