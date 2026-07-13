@@ -45,7 +45,11 @@ vi.mock("@/lib/mcp/enrollment", () => ({
 import { registerMoraTools } from "@/lib/mcp/tools";
 
 interface RegisteredTool {
-  config: { annotations?: Record<string, boolean>; outputSchema?: unknown };
+  config: {
+    annotations?: Record<string, boolean>;
+    outputSchema?: unknown;
+    _meta?: Record<string, unknown>;
+  };
   callback: (input: never, context: { authInfo: AuthInfo }) => Promise<{
     isError?: boolean;
     content: Array<{ text: string }>;
@@ -59,6 +63,7 @@ function registeredTools(): Map<string, RegisteredTool> {
     registerTool: (name: string, config: RegisteredTool["config"], callback: RegisteredTool["callback"]) => {
       tools.set(name, { config, callback });
     },
+    registerResource: vi.fn(),
   };
   registerMoraTools(server as unknown as McpServer);
   return tools;
@@ -163,6 +168,9 @@ describe("MCP tool surface", () => {
         idempotentHint: false,
       });
     }
+    expect(tools.get("simulate_future")?.config._meta).toEqual({
+      ui: { resourceUri: "ui://mora/simulation-results.html" },
+    });
   });
 
   it("enrolls an explicitly approved Claude snapshot without claiming hidden-memory access", async () => {

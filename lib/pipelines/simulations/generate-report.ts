@@ -37,7 +37,9 @@ export async function generateReport(params: {
     openaiModel: "gpt-4o",
     system: orchestratorSystem,
     prompt,
-    maxTokens: 2500,
+    // The synthesis follows all ten verbatim paths in connector responses, so
+    // keep it useful but compact enough for the complete result to fit.
+    maxTokens: 900,
     userId: params.userId,
     action: "simulation.report",
   });

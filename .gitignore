@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/mcp-apps/**/dist/
 
 # production
 /build

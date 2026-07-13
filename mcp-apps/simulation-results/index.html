@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mora simulation results</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Geist, "DM Sans", system-ui, sans-serif;
+        --bg: #f7f7f5;
+        --surface: #ffffff;
+        --text: #181817;
+        --muted: #686864;
+        --line: #deded8;
+        --accent: #a44f2b;
+        --accent-soft: #f4e8e1;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #191918;
+          --surface: #222220;
+          --text: #f2f2ed;
+          --muted: #aaa9a2;
+          --line: #3c3c38;
+          --accent: #e2916d;
+          --accent-soft: #3b2820;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); }
+      button { font: inherit; }
+      .shell { min-height: 220px; max-height: 720px; overflow: auto; }
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        padding: 20px 22px 16px;
+        background: color-mix(in srgb, var(--bg) 92%, transparent);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(14px);
+      }
+      .eyebrow { margin: 0 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { margin: 0; font-size: 20px; line-height: 1.2; letter-spacing: -.025em; }
+      .meta { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+      .toggle {
+        align-self: center;
+        padding: 8px 11px;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 160ms ease, border-color 160ms ease;
+      }
+      .toggle:hover { border-color: var(--accent); }
+      .toggle:active { transform: translateY(1px); }
+      .content { padding: 18px 22px 26px; }
+      .section-label { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+      .paths { display: grid; gap: 9px; }
+      details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: clip; }
+      summary { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 14px 15px; cursor: pointer; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      .path-title { font-size: 14px; font-weight: 650; line-height: 1.35; }
+      .path-index { color: var(--accent); font: 600 12px/1.4 ui-monospace, "SFMono-Regular", monospace; }
+      .path-body, .synthesis-body { margin: 0; padding: 0 15px 16px; color: var(--muted); font-size: 13px; line-height: 1.62; white-space: pre-wrap; }
+      .synthesis { margin-top: 20px; padding: 17px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; }
+      .synthesis h2 { margin: 0 0 10px; font-size: 16px; letter-spacing: -.015em; }
+      .synthesis-body { padding: 0; color: var(--text); }
+      .state { padding: 28px 22px; }
+      .state-line { width: 72%; height: 12px; margin: 10px 0; border-radius: 6px; background: var(--line); animation: pulse 1.4s ease-in-out infinite; }
+      .state-line.short { width: 42%; }
+      .error { color: #b33b32; }
+      [hidden] { display: none !important; }
+      @keyframes pulse { 50% { opacity: .45; } }
+      @media (prefers-reduced-motion: reduce) { .state-line { animation: none; } }
+      @media (max-width: 560px) {
+        .header { grid-template-columns: 1fr; padding: 17px 16px 14px; }
+        .toggle { justify-self: start; }
+        .content { padding: 15px 16px 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section id="loading" class="state" aria-live="polite">
+        <p class="eyebrow">Mora simulation</p>
+        <div class="state-line"></div>
+        <div class="state-line short"></div>
+      </section>
+      <section id="error" class="state error" hidden></section>
+      <section id="results" hidden>
+        <header class="header">
+          <div>
+            <p class="eyebrow">Complete Mora output</p>
+            <h1 id="title">Simulation results</h1>
+            <p id="meta" class="meta"></p>
+          </div>
+          <button id="toggle" class="toggle" type="button">Expand all paths</button>
+        </header>
+        <div class="content">
+          <p id="path-label" class="section-label">Raw path results</p>
+          <div id="paths" class="paths"></div>
+          <section class="synthesis">
+            <h2>Mora synthesis</h2>
+            <pre id="synthesis" class="synthesis-body"></pre>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

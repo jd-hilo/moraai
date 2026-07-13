@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:mcp-apps && next build",
+    "build:mcp-apps": "vite build --config mcp-apps/vite.config.ts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -16,6 +17,7 @@
     "@aws-sdk/client-s3": "^3.1030.0",
     "@clerk/mcp-tools": "^0.5.0",
     "@clerk/nextjs": "^7.5.8",
+    "@modelcontextprotocol/ext-apps": "^1.1.2",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
@@ -42,6 +44,8 @@
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-singlefile": "^2.3.0",
     "vitest": "^4.1.9"
   },
   "overrides": {
