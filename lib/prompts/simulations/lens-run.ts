@@ -31,13 +31,14 @@ ${vaultContext || "(no context available)"}
 ## Instructions
 
 Write a matter-of-fact account of how this path unfolds. Be specific:
-- Walk through the key moments year by year (Year 1, Year 2–3, Year ${timeHorizonYears})
+- Cover the key early, middle, and final-horizon moments
 - Name concrete decisions, turning points, and consequences
 - Use real-feeling specifics: numbers, timelines, tradeoffs
 - Where relevant, reference how this affects ${name}'s relationships, finances, or career based on their context
+- If the scenario says "instead of", "versus", or otherwise names an alternative, explicitly compare this path with that alternative rather than simulating the chosen option in isolation
 - No fluff, no hedging, no "it could go either way" — this is the version where *this* possibility happens
 
-3–4 paragraphs. Second person ("you"). Factual tone.
+Write exactly one compact paragraph of 120–160 words. Second person ("you"). Factual tone. The strict length limit is required so all 10 raw paths can be shown to the user without summarization.
 
 After your account, on its own line, write exactly:
 SIGNAL: {outlook} | CONFIDENCE: {score}

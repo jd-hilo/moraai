@@ -39,7 +39,9 @@ export async function runLensSimulation(params: {
     openaiModel: "gpt-4o-mini",
     system: twinIdentity,
     prompt,
-    maxTokens: 1200,
+    // Keep every path short enough that an MCP host can reproduce all ten
+    // verbatim in one answer instead of collapsing them into a summary.
+    maxTokens: 320,
     userId: params.userId,
     action: "simulation.run",
   });

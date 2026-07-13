@@ -52,25 +52,26 @@ ${runBlocks}${skippedNote}
 ## Task
 
 Write a matter-of-fact simulation report. Synthesize across all possibilities to identify the most likely outcome and what the user should know.
+If the scenario names an alternative with wording such as "instead of" or "versus", keep that alternative as the explicit baseline throughout the verdict, summary, and findings. Do not reduce a comparison to a simulation of only the chosen option.
 
 Return ONLY a JSON object with this exact shape:
 
 {
-  "verdict": "1–2 sentence plain-language prediction. State the most likely outcome factually. No hedging.",
+  "verdict": "1–2 concise sentences. State the most likely outcome factually. No hedging.",
   "overallConfidence": 0-100,
   "topPossibilityId": "${topPossibility?.id ?? ""}",
-  "summary": "2–3 sentence paragraph. What is the realistic picture across the probability-weighted paths? What matters most?",
+  "summary": "2 concise sentences. What is the realistic picture across the probability-weighted paths? What matters most?",
   "outcomes": {
     "title": "Likely Outcomes",
-    "points": ["4–6 concrete outcomes at ${timeHorizonYears} years — specific, not generic. Reference probability where useful."]
+    "points": ["3–4 concise, concrete outcomes at ${timeHorizonYears} years — specific, not generic. Reference probability where useful."]
   },
   "risks": {
     "title": "Key Risks",
-    "points": ["3–5 specific risks or failure modes — ordered by likelihood × impact."]
+    "points": ["3–4 concise, specific risks or failure modes — ordered by likelihood × impact."]
   },
   "insights": {
     "title": "What the Simulation Reveals",
-    "points": ["3–4 non-obvious things this analysis surfaced — things the user might not have seen without running it."]
+    "points": ["2–3 concise, non-obvious things this analysis surfaced — things the user might not have seen without running it."]
   }
 }
 
@@ -79,5 +80,6 @@ Rules:
 - "topPossibilityId" must be the exact id string of the highest-probability possibility that completed.
 - Address the user only as "you" and "your" in every user-facing field. Never use any personal name, account name, or third-person pronoun for the user; memory and account names can differ.
 - Every bullet earns its place. No filler. No platitudes.
+- Keep each bullet to one sentence and the entire JSON response under 450 words so the ten raw paths remain the dominant part of the final result.
 - Return ONLY the JSON. No code fences, no prose.`;
 }
