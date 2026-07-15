@@ -88,7 +88,9 @@ interface MemoryWriteInput {
   context?: string;
 }
 
-const SIMULATION_RESULTS_RESOURCE_URI = "ui://mora/simulation-results.html";
+// Treat the resource URI as the app bundle's cache key. Bump the version when
+// host-visible UI changes so existing MCP clients cannot reuse stale markup.
+const SIMULATION_RESULTS_RESOURCE_URI = "ui://mora/simulation-results-v2.html";
 
 export interface MoraToolPayload {
   status: "ok" | "setup_required" | "no_match" | "pending" | "error";

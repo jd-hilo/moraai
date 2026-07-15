@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 const mocks = vi.hoisted(() => ({
   getOrCreateUserByClerkId: vi.fn(),
@@ -248,11 +250,25 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results.html",
+        resourceUri: "ui://mora/simulation-results-v2.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v2.html",
     });
+  });
+
+  it("ships one cache-busted full-path reading control", async () => {
+    const [html, script] = await Promise.all([
+      readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
+      readFile(path.join(process.cwd(), "mcp-apps/simulation-results/main.ts"), "utf8"),
+    ]);
+
+    expect(html.match(/id="synthesis-toggle"/g) ?? []).toHaveLength(1);
+    expect(html).toContain(
+      'aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>'
+    );
+    expect(script).toContain("actions.append(synthesisToggle);");
+    expect(script).not.toContain("const readButton");
   });
 
   it("continues an accidental status check into coaching instead of a tool tour", async () => {
