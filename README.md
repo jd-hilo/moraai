@@ -99,8 +99,10 @@ Use separate staging and production Clerk applications and databases. The
 public setup experience is available at `/connect/claude`.
 
 The beta connector exposes `get_mora_status`, `recall_twin`, `save_memory`,
-`list_simulations`, `get_simulation`, `create_simulation`, and
-`run_simulation`.
+`life_coach`, `list_simulations`, `get_simulation`, `create_simulation`,
+`simulate_future`, and `run_simulation`. `life_coach` returns authenticated,
+query-relevant memories and completed simulation evidence for Claude to reason
+over directly; it does not make a second model call.
 
 ---
 
