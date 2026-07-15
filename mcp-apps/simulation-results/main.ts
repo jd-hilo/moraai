@@ -56,7 +56,21 @@ function showError(message: string) {
   loading.hidden = true;
   results.hidden = true;
   error.hidden = false;
-  error.textContent = message;
+  error.replaceChildren();
+
+  const mark = document.createElement("span");
+  mark.className = "error-mark";
+  mark.setAttribute("aria-hidden", "true");
+  mark.innerHTML = `<svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 5v4M8.5 12.2v.1M8.5 15.2a6.7 6.7 0 1 0 0-13.4 6.7 6.7 0 0 0 0 13.4Z" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" /></svg>`;
+
+  const copy = document.createElement("div");
+  copy.className = "error-copy";
+  const heading = document.createElement("h2");
+  heading.textContent = "These simulation results could not be displayed";
+  const detail = document.createElement("p");
+  detail.textContent = `${message} Ask Claude to run the simulation again if the problem continues.`;
+  copy.append(heading, detail);
+  error.append(mark, copy);
 }
 
 function isSimulationResult(value: unknown): value is SimulationResult {
@@ -72,6 +86,7 @@ function isSimulationResult(value: unknown): value is SimulationResult {
 function renderPath(path: SimulationPath, index: number, total: number, shareWithModel = false) {
   const confidence = path.confidence === null ? "Not reported" : `${path.confidence}%`;
   pathDetail.replaceChildren();
+  pathDetail.setAttribute("aria-labelledby", `path-tab-${index}`);
 
   const heading = document.createElement("div");
   heading.className = "detail-heading";
@@ -123,10 +138,14 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
 
 function renderReport(result: SimulationResult) {
   synthesisElement.replaceChildren();
+  synthesisPanel.hidden = true;
+  synthesisToggle.setAttribute("aria-expanded", "false");
+  synthesisToggle.textContent = "View Mora synthesis";
   if (!result.report) {
-    synthesisElement.textContent = "No synthesis was returned.";
+    synthesisToggle.hidden = true;
     return;
   }
+  synthesisToggle.hidden = false;
 
   const intro = document.createElement("div");
   intro.className = "synthesis-intro";
@@ -165,16 +184,39 @@ function renderSimulation(result: SimulationResult) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "path-row";
-    button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+    button.id = `path-tab-${index}`;
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-controls", "path-detail");
+    button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+    button.tabIndex = index === 0 ? 0 : -1;
     button.innerHTML = `<span class="path-number"></span><span class="path-copy"><strong></strong><small></small></span><span class="path-probability"></span>`;
     button.querySelector<HTMLElement>(".path-number")!.textContent = String(index + 1).padStart(2, "0");
     button.querySelector("strong")!.textContent = path.title;
     button.querySelector("small")!.textContent = path.description;
     button.querySelector<HTMLElement>(".path-probability")!.textContent = `${path.probability}%`;
-    button.addEventListener("click", () => {
-      pathList.querySelectorAll(".path-row").forEach((row) => row.setAttribute("aria-pressed", "false"));
-      button.setAttribute("aria-pressed", "true");
+    const selectPath = () => {
+      pathList.querySelectorAll<HTMLButtonElement>(".path-row").forEach((row) => {
+        row.setAttribute("aria-selected", "false");
+        row.tabIndex = -1;
+      });
+      button.setAttribute("aria-selected", "true");
+      button.tabIndex = 0;
       renderPath(path, index, result.paths.length, true);
+    };
+    button.addEventListener("click", selectPath);
+    button.addEventListener("keydown", (event) => {
+      const buttons = Array.from(pathList.querySelectorAll<HTMLButtonElement>(".path-row"));
+      const current = buttons.indexOf(button);
+      let next = current;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % buttons.length;
+      else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + buttons.length) % buttons.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = buttons.length - 1;
+      else return;
+      event.preventDefault();
+      buttons[next].focus();
+      buttons[next].click();
+      buttons[next].scrollIntoView({ block: "nearest", inline: "nearest" });
     });
     pathList.append(button);
   });
