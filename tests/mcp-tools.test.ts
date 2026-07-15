@@ -200,6 +200,12 @@ describe("MCP tool surface", () => {
       idempotentHint: true,
     });
     expect(tools.get("life_coach")?.config.description).toContain("Use Mora as my life coach");
+    expect(tools.get("life_coach")?.config.description).toContain(
+      "Do not call get_mora_status or recall_twin first"
+    );
+    expect(tools.get("get_mora_status")?.config.description).toContain(
+      "Do not call this before life_coach"
+    );
     for (const name of ["create_simulation", "simulate_future", "run_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         readOnlyHint: false,
@@ -213,6 +219,17 @@ describe("MCP tool surface", () => {
       },
       "ui/resourceUri": "ui://mora/simulation-results.html",
     });
+  });
+
+  it("continues an accidental status check into coaching instead of a tool tour", async () => {
+    const tools = registeredTools();
+    const response = await tools.get("get_mora_status")!.callback({} as never, { authInfo });
+    const payload = JSON.parse(response.content[0].text);
+
+    expect(payload).toMatchObject({ status: "ok", memoryAvailable: true });
+    expect(payload.nextAction).toContain("call life_coach now");
+    expect(payload.nextAction).toContain("give the actual coaching response");
+    expect(payload.nextAction).toContain("do not explain the tools");
   });
 
   it("enrolls an explicitly approved Claude snapshot without claiming hidden-memory access", async () => {

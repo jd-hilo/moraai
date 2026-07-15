@@ -125,7 +125,9 @@ describe("life coach context", () => {
       "career change decision",
     ]);
     expect(result.context.simulations.every(({ paths }) => paths.length === 1)).toBe(true);
-    expect(result.nextAction).toContain("without asking the user to name memories or simulations");
+    expect(result.nextAction).toContain("Answer now with actual personalized coaching");
+    expect(result.nextAction).toContain("Do not explain Mora's tools or capabilities");
+    expect(result.nextAction).toContain("ask the user to name a topic, memory, or simulation");
     expect(mocks.recallBroadMemoryForUser).toHaveBeenCalledWith(
       "alpha",
       LIFE_COACH_MEMORY_MAX_RECORDS,
