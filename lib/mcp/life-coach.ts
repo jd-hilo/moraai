@@ -412,8 +412,8 @@ function baseResult(
     nextAction:
       status === "ok"
         ? mode === "overview"
-          ? "Claude should now act as the user's life coach in its own voice: synthesize cross-cutting themes from the overview, identify a few useful priorities or observations, and give practical advice without asking the user to name memories or simulations. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
-          : "Claude should now reason over the relevant evidence and answer the user's question in its own voice. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
+          ? "Answer now with actual personalized coaching in Claude's own voice. Synthesize cross-cutting themes from the overview, identify a few useful priorities or observations, and give practical advice. Do not explain Mora's tools or capabilities, offer a menu, or ask the user to name a topic, memory, or simulation before giving advice. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
+          : "Answer now with actual personalized coaching in Claude's own voice, reasoning over the relevant evidence. Do not explain Mora's tools or capabilities, offer a menu, or replace the answer with a follow-up question. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
         : status === "setup_required"
           ? "Give useful general guidance without pretending Mora supplied personal context. You may offer the approved Mora enrollment flow if personalization would help."
           : "Answer without claiming Mora supplied relevant personal context, or ask one focused question that would make the request more specific.",

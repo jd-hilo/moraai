@@ -13,9 +13,17 @@ vi.mock("@clerk/mcp-tools/next", async (importOriginal) => {
 
 import { clerkUserIdFromAuth } from "@/lib/mcp/tools";
 import { selectRelevantMemory } from "@/lib/mcp/memory";
-import { POST } from "@/app/mcp/route";
+import { MORA_MCP_INSTRUCTIONS, POST } from "@/app/mcp/route";
 
 describe("MCP contract", () => {
+  it("routes one-line coaching requests directly to life_coach", () => {
+    expect(MORA_MCP_INSTRUCTIONS).toContain("Highest-priority routing rule");
+    expect(MORA_MCP_INSTRUCTIONS).toContain("Use Mora as my life coach");
+    expect(MORA_MCP_INSTRUCTIONS).toContain("Do not call get_mora_status or recall_twin first");
+    expect(MORA_MCP_INSTRUCTIONS).toContain("answer with actual personalized coaching immediately");
+    expect(MORA_MCP_INSTRUCTIONS).toContain("Do not explain Mora's tools or capabilities");
+  });
+
   it("fails closed when Clerk auth metadata has no user ID", () => {
     expect(() => clerkUserIdFromAuth(undefined)).toThrow();
     expect(() => clerkUserIdFromAuth({ extra: {} } as AuthInfo)).toThrow();
