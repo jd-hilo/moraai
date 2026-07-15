@@ -101,7 +101,7 @@ Use separate staging and production Clerk applications and databases. The
 public setup experience is available at `/connect/claude`.
 
 The beta connector exposes `get_mora_status`, `enroll_from_claude_memory`,
-`sync_claude_memory`, `mirror_claude_memory_fact`, `recall_twin`, `save_memory`, `life_coach`,
+`sync_claude_memory`, `recall_twin`, `save_memory`, `life_coach`,
 `list_simulations`, `get_simulation`, `create_simulation`, `simulate_future`,
 and `run_simulation`. `life_coach` returns authenticated, query-relevant
 memories and completed simulation evidence for Claude to reason over directly;
@@ -113,11 +113,9 @@ simulations first.
 Claude does not currently expose a memory-change webhook or an API that Mora
 can poll. Automatic memory synthesis therefore reaches Mora the next time the
 Mora connector is enabled in a non-incognito Claude conversation and Claude can
-send its current memory snapshot. For direct “remember this” requests, users
-append the one-time Mora instruction shown at `/connect/claude` to Claude's
-account-wide profile instructions. The direct request then counts as per-write
-approval and Mora mirrors the exact fact in the same turn without a second
-confirmation. Identical snapshots and exact memories are skipped idempotently.
+send its current memory snapshot. Ordinary Claude memory requests do not write
+to Mora; users explicitly request a Mora snapshot sync or an exact Mora memory
+write. Identical snapshots and exact memories are skipped idempotently.
 
 ---
 

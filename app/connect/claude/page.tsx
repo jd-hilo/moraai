@@ -3,14 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-prompt";
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
-import { CopyMemoryInstruction } from "@/components/connect/copy-memory-instruction";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
 import { ScrollToSetup } from "@/components/connect/scroll-to-setup";
 import { CLAUDE_CONNECTOR_URL } from "@/lib/claude/connector";
-import {
-  CLAUDE_ENROLLMENT_PROMPT,
-  CLAUDE_MEMORY_MIRROR_INSTRUCTION,
-} from "@/lib/claude/enrollment-prompt";
+import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
 
 export const metadata: Metadata = {
   title: "Mora for Claude — Add the MCP connector",
@@ -136,11 +132,11 @@ export default function ConnectClaudePage() {
                 Setup
               </p>
               <h2 className="mt-5 font-[Recoleta] text-3xl font-normal leading-[1.02] tracking-[-0.035em] md:text-5xl">
-                Connect, enroll, and turn on automatic mirroring.
+                Connect and enroll in four steps.
               </h2>
               <p className="mx-auto mt-5 max-w-[54ch] text-sm leading-relaxed text-[#7b7a8b] md:text-base">
-                Add Mora once, approve the connection, then complete the two
-                one-time Claude setup actions below.
+                Add Mora once, approve the connection, then send one message to
+                create your private Mora memory.
               </p>
               <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-2xl border border-[#17171a]/10 bg-[#f8f8f7] p-2 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#da7756]/15 bg-white">
@@ -335,33 +331,6 @@ export default function ConnectClaudePage() {
             </ScrollReveal>
           </div>
 
-          <ScrollReveal delay={360}>
-            <div className="mx-auto mt-16 grid max-w-5xl gap-8 rounded-[2rem] border border-[#8f85df]/20 bg-[#faf9ff] p-6 shadow-[0_24px_60px_-48px_rgba(79,65,151,0.55)] md:grid-cols-[0.78fr_1.22fr] md:p-9">
-              <div>
-                <span className="font-mono text-xs text-[#7b73cf]">05</span>
-                <h3 className="mt-4 font-[Recoleta] text-2xl font-normal tracking-[-0.03em]">
-                  Make “remember” mirror automatically.
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#706e78]">
-                  In Claude, open Settings → General → Instructions for Claude.
-                  Append this instruction once. It makes an ordinary request
-                  like “remember I like dogs” discover Mora without requiring
-                  you to mention Mora every time.
-                </p>
-                <div className="mt-5">
-                  <CopyMemoryInstruction />
-                </div>
-              </div>
-              <div className="rounded-[1.35rem] border border-[#17171a]/10 bg-white p-5">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#7b73cf]">
-                  Instructions for Claude
-                </p>
-                <p className="mt-4 text-sm leading-relaxed text-[#35343b]">
-                  {CLAUDE_MEMORY_MIRROR_INSTRUCTION}
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 
@@ -391,9 +360,9 @@ export default function ConnectClaudePage() {
               ],
               [
                 "02",
-                "Stay in sync",
-                "Direct memory updates mirror in the same turn; Claude’s background memory refresh syncs in the next Mora-enabled conversation. Unchanged snapshots are skipped.",
-                "Remember that I’m protecting Friday mornings for deep work.",
+                "Sync on demand",
+                "Ask Claude to send its current memory snapshot to Mora whenever you want to refresh your twin. Unchanged snapshots are skipped.",
+                "Sync my current Claude memory to Mora.",
               ],
               [
                 "03",
@@ -436,9 +405,8 @@ export default function ConnectClaudePage() {
               <p className="mt-5 max-w-[58ch] text-base leading-relaxed text-[#7b7a8b]">
                 Send the enrollment message in Claude after connecting. It
                 includes your approval, so Claude can create your Mora memory
-                from context it is allowed to access and keep future Claude
-                memory updates synchronized when Mora is active. You can also
-                import history later.
+                from context it is allowed to access. You can refresh that
+                snapshot on demand or import history later.
               </p>
             </div>
             <div className="rounded-[1.5rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_18px_45px_-38px_rgba(35,32,30,0.3)]">
