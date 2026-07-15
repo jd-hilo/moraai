@@ -285,6 +285,7 @@ function renderSimulation(result: SimulationResult) {
     button.id = `path-tab-${index}`;
     button.setAttribute("role", "tab");
     button.setAttribute("aria-controls", "path-detail");
+    button.setAttribute("aria-label", `Path ${index + 1}: ${path.title}, ${path.probability}% likely`);
     button.setAttribute("aria-selected", index === 0 ? "true" : "false");
     button.tabIndex = index === 0 ? 0 : -1;
     button.innerHTML = `<span class="path-number"></span><span class="path-copy"><strong></strong><small></small></span><span class="path-probability"></span>`;
@@ -306,15 +307,16 @@ function renderSimulation(result: SimulationResult) {
       const buttons = Array.from(pathList.querySelectorAll<HTMLButtonElement>(".path-row"));
       const current = buttons.indexOf(button);
       let next = current;
-      if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % buttons.length;
-      else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + buttons.length) % buttons.length;
+      if (event.key === "ArrowRight") next = (current + 1) % buttons.length;
+      else if (event.key === "ArrowLeft") next = (current - 1 + buttons.length) % buttons.length;
+      else if (event.key === "ArrowDown") next = (current + 5) % buttons.length;
+      else if (event.key === "ArrowUp") next = (current - 5 + buttons.length) % buttons.length;
       else if (event.key === "Home") next = 0;
       else if (event.key === "End") next = buttons.length - 1;
       else return;
       event.preventDefault();
       buttons[next].focus();
       buttons[next].click();
-      buttons[next].scrollIntoView({ block: "nearest", inline: "nearest" });
     });
     pathList.append(button);
   });
