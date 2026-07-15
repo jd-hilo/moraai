@@ -51,6 +51,78 @@ const pathDetail = document.querySelector<HTMLElement>("#path-detail")!;
 const synthesisElement = document.querySelector<HTMLElement>("#synthesis")!;
 const synthesisToggle = document.querySelector<HTMLButtonElement>("#synthesis-toggle")!;
 const synthesisPanel = document.querySelector<HTMLElement>("#synthesis-panel")!;
+const displayModeToggle = document.querySelector<HTMLButtonElement>("#display-mode-toggle")!;
+const modeStatus = document.querySelector<HTMLElement>("#mode-status")!;
+
+type ReadingDestination = "fullscreen" | "inline" | "external";
+
+let simulationUrl = "";
+
+function announce(message: string) {
+  modeStatus.textContent = "";
+  requestAnimationFrame(() => {
+    modeStatus.textContent = message;
+  });
+}
+
+function setSynthesisVisibility(visible: boolean) {
+  synthesisPanel.hidden = !visible;
+  synthesisToggle.setAttribute("aria-expanded", String(visible));
+  synthesisToggle.textContent = visible ? "Hide Mora synthesis" : "View Mora synthesis";
+}
+
+function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
+  const readingMode = mode === "fullscreen" ? "fullscreen" : "inline";
+  document.documentElement.dataset.displayMode = readingMode;
+  displayModeToggle.hidden = readingMode !== "fullscreen";
+
+  if (readingMode === "inline") {
+    setSynthesisVisibility(false);
+  }
+}
+
+async function openSimulationInMora(): Promise<boolean> {
+  if (!simulationUrl) return false;
+
+  try {
+    const result = await app.openLink({ url: simulationUrl });
+    if (result.isError) return false;
+    announce("Opened the full simulation in Mora.");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function enterReadingMode(trigger: HTMLButtonElement): Promise<ReadingDestination> {
+  const context = app.getHostContext();
+  if (context?.displayMode === "fullscreen") return "fullscreen";
+
+  const label = trigger.textContent;
+  trigger.disabled = true;
+  trigger.setAttribute("aria-busy", "true");
+
+  try {
+    if (context?.availableDisplayModes?.includes("fullscreen")) {
+      const result = await app.requestDisplayMode({ mode: "fullscreen" });
+      syncDisplayMode(result.mode);
+      if (result.mode === "fullscreen") return "fullscreen";
+    }
+
+    if (await openSimulationInMora()) return "external";
+
+    announce("Expanded inline because this host does not offer a reading view.");
+    return "inline";
+  } catch {
+    if (await openSimulationInMora()) return "external";
+    announce("Expanded inline because the reading view could not be opened.");
+    return "inline";
+  } finally {
+    trigger.disabled = false;
+    trigger.removeAttribute("aria-busy");
+    trigger.textContent = label;
+  }
+}
 
 function showError(message: string) {
   loading.hidden = true;
@@ -100,7 +172,34 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
 
   const narrative = document.createElement("p");
   narrative.className = "narrative";
+  narrative.id = "path-narrative";
+  narrative.dataset.expanded = "false";
   narrative.textContent = path.output;
+
+  const actions = document.createElement("div");
+  actions.className = "detail-actions";
+  const readButton = document.createElement("button");
+  readButton.type = "button";
+  readButton.className = "read-button";
+  readButton.setAttribute("aria-expanded", "false");
+  readButton.setAttribute("aria-controls", narrative.id);
+  readButton.textContent = "Read full path";
+  readButton.addEventListener("click", async () => {
+    if (narrative.dataset.expanded === "true") {
+      narrative.dataset.expanded = "false";
+      readButton.setAttribute("aria-expanded", "false");
+      readButton.textContent = "Read full path";
+      return;
+    }
+
+    const destination = await enterReadingMode(readButton);
+    if (destination === "inline") {
+      narrative.dataset.expanded = "true";
+      readButton.setAttribute("aria-expanded", "true");
+      readButton.textContent = "Show less";
+    }
+  });
+  actions.append(readButton, synthesisToggle);
 
   const footer = document.createElement("div");
   footer.className = "detail-footer";
@@ -111,7 +210,7 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
   footer.querySelector<HTMLElement>(".context-note")!.textContent = shareWithModel
     ? "Selected for your next Claude message"
     : "Select this path to discuss it with Claude";
-  pathDetail.append(heading, premise, narrative, footer);
+  pathDetail.append(heading, premise, narrative, actions, footer);
 
   if (!shareWithModel) return;
 
@@ -138,9 +237,7 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
 
 function renderReport(result: SimulationResult) {
   synthesisElement.replaceChildren();
-  synthesisPanel.hidden = true;
-  synthesisToggle.setAttribute("aria-expanded", "false");
-  synthesisToggle.textContent = "View Mora synthesis";
+  setSynthesisVisibility(false);
   if (!result.report) {
     synthesisToggle.hidden = true;
     return;
@@ -178,6 +275,7 @@ function renderSimulation(result: SimulationResult) {
   title.textContent = result.simulation.title;
   meta.textContent = `${result.simulation.scenario} · ${result.simulation.timeHorizonYears}-year horizon`;
   count.textContent = `${result.completedPathCount}/${result.pathCount} complete`;
+  simulationUrl = result.simulationUrl;
   pathList.replaceChildren();
 
   result.paths.forEach((path, index) => {
@@ -228,14 +326,35 @@ function renderSimulation(result: SimulationResult) {
   results.hidden = false;
 }
 
-synthesisToggle.addEventListener("click", () => {
+synthesisToggle.addEventListener("click", async () => {
   const shouldShow = synthesisPanel.hidden;
-  synthesisPanel.hidden = !shouldShow;
-  synthesisToggle.setAttribute("aria-expanded", String(shouldShow));
-  synthesisToggle.textContent = shouldShow ? "Hide Mora synthesis" : "View Mora synthesis";
+  if (!shouldShow) {
+    setSynthesisVisibility(false);
+    return;
+  }
+
+  const destination = await enterReadingMode(synthesisToggle);
+  if (destination !== "external") setSynthesisVisibility(true);
+});
+
+displayModeToggle.addEventListener("click", async () => {
+  displayModeToggle.disabled = true;
+  displayModeToggle.setAttribute("aria-busy", "true");
+  try {
+    const result = await app.requestDisplayMode({ mode: "inline" });
+    syncDisplayMode(result.mode);
+  } catch {
+    announce("The chat view could not be restored. You can also press Escape.");
+  } finally {
+    displayModeToggle.disabled = false;
+    displayModeToggle.removeAttribute("aria-busy");
+  }
 });
 
 const app = new App({ name: "Mora simulation results", version: "1.0.0" });
+app.onhostcontextchanged = () => {
+  syncDisplayMode();
+};
 app.ontoolresult = (toolResult) => {
   const simulationResult = toolResult._meta?.["mora/simulationResult"];
   if (!isSimulationResult(simulationResult)) {
@@ -244,4 +363,6 @@ app.ontoolresult = (toolResult) => {
   }
   renderSimulation(simulationResult);
 };
-void app.connect();
+void app.connect()
+  .then(() => syncDisplayMode())
+  .catch(() => showError("Mora could not connect to this MCP host."));
