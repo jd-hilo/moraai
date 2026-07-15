@@ -66,7 +66,8 @@ export default function ConnectClaudePage() {
             </p>
             <p className="mt-4 max-w-[58ch] text-sm leading-relaxed text-[#7b7a8b]">
               Claude remains the model doing the reasoning. Mora securely
-              retrieves relevant context and saves only the memories you approve.
+              retrieves relevant context and, with your enrollment approval,
+              keeps Claude memory mirrored when the connector is active.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -358,8 +359,8 @@ export default function ConnectClaudePage() {
               ],
               [
                 "02",
-                "Save with intent",
-                "Add a new memory through an explicit tool action you approve. Your Claude transcript stays in Claude.",
+                "Stay in sync",
+                "Direct memory updates mirror in the same turn; Claude’s background memory refresh syncs in the next Mora-enabled conversation. Unchanged snapshots are skipped.",
                 "Remember that I’m protecting Friday mornings for deep work.",
               ],
               [
@@ -403,8 +404,9 @@ export default function ConnectClaudePage() {
               <p className="mt-5 max-w-[58ch] text-base leading-relaxed text-[#7b7a8b]">
                 Send the enrollment message in Claude after connecting. It
                 includes your approval, so Claude can create your Mora memory
-                from context it is allowed to access and confirm what was saved.
-                You can also import history later.
+                from context it is allowed to access and keep future Claude
+                memory updates synchronized when Mora is active. You can also
+                import history later.
               </p>
             </div>
             <div className="rounded-[1.5rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_18px_45px_-38px_rgba(35,32,30,0.3)]">

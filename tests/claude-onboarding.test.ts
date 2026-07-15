@@ -7,6 +7,7 @@ describe("Claude connector onboarding prompt", () => {
     expect(CLAUDE_ENROLLMENT_PROMPT).toContain("Enroll me in Mora");
     expect(CLAUDE_ENROLLMENT_PROMPT).toContain("context you can access");
     expect(CLAUDE_ENROLLMENT_PROMPT).toContain("I approve saving it");
+    expect(CLAUDE_ENROLLMENT_PROMPT).toContain("future Claude memory updates");
     expect(CLAUDE_ENROLLMENT_PROMPT).not.toMatch(/^\//);
   });
 
