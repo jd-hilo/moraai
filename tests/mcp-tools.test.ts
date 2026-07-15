@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   simulateFutureForUser: vi.fn(),
   enrollFromClaudeMemory: vi.fn(),
   buildLifeCoachContextForUser: vi.fn(),
+  syncClaudeMemoryForUser: vi.fn(),
 }));
 
 vi.mock("@/lib/get-or-create-user", () => ({
@@ -44,6 +45,10 @@ vi.mock("@/lib/mcp/enrollment", () => ({
 }));
 vi.mock("@/lib/mcp/life-coach", () => ({
   buildLifeCoachContextForUser: mocks.buildLifeCoachContextForUser,
+}));
+vi.mock("@/lib/mcp/claude-memory-sync", () => ({
+  CLAUDE_SYNC_STATE_PATH: "_claude_memory_sync.json",
+  syncClaudeMemoryForUser: mocks.syncClaudeMemoryForUser,
 }));
 
 import { registerMoraTools } from "@/lib/mcp/tools";
@@ -84,7 +89,10 @@ describe("MCP tool surface", () => {
       id: "mora-alpha",
       onboardingComplete: true,
     });
-    mocks.listVaultFilesForUser.mockResolvedValue(["identity/focus.md"]);
+    mocks.listVaultFilesForUser.mockResolvedValue([
+      "identity/focus.md",
+      "_claude_memory_sync.json",
+    ]);
     mocks.recallMemoryForUser.mockResolvedValue({
       kind: "ready",
       memory: "<memory_record>Alpha focus</memory_record>",
@@ -166,6 +174,13 @@ describe("MCP tool surface", () => {
         pathsUsed: 0,
       },
     });
+    mocks.syncClaudeMemoryForUser.mockResolvedValue({
+      outcome: "synced",
+      syncedAt: "2026-07-15T12:00:00.000Z",
+      update: {
+        changes: [{ summary: "Created goals/launch.md" }],
+      },
+    });
   });
 
   it("registers exactly the Claude-native beta tools with safe annotations", () => {
@@ -174,6 +189,7 @@ describe("MCP tool surface", () => {
       "get_mora_status",
       "enroll_from_claude_memory",
       "recall_twin",
+      "sync_claude_memory",
       "save_memory",
       "life_coach",
       "list_simulations",
@@ -206,6 +222,10 @@ describe("MCP tool surface", () => {
     expect(tools.get("get_mora_status")?.config.description).toContain(
       "Do not call this before life_coach"
     );
+    expect(tools.get("sync_claude_memory")?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      idempotentHint: true,
+    });
     for (const name of ["create_simulation", "simulate_future", "run_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         readOnlyHint: false,
@@ -249,6 +269,24 @@ describe("MCP tool surface", () => {
     });
   });
 
+  it("reports whether ongoing Claude memory synchronization has standing approval", async () => {
+    const tools = registeredTools();
+    const enabled = await tools.get("get_mora_status")!.callback({} as never, { authInfo });
+    mocks.listVaultFilesForUser.mockResolvedValueOnce(["identity/focus.md"]);
+    const disabled = await tools.get("get_mora_status")!.callback({} as never, { authInfo });
+
+    expect(JSON.parse(enabled.content[0].text)).toMatchObject({
+      status: "ok",
+      memoryAvailable: true,
+      claudeMemorySyncEnabled: true,
+    });
+    expect(JSON.parse(disabled.content[0].text)).toMatchObject({
+      status: "ok",
+      memoryAvailable: true,
+      claudeMemorySyncEnabled: false,
+    });
+  });
+
   it("passes only the OAuth-resolved internal Mora user ID into recall and save", async () => {
     const tools = registeredTools();
     await tools.get("recall_twin")!.callback({ query: "focus" } as never, { authInfo });
@@ -285,6 +323,22 @@ describe("MCP tool surface", () => {
       status: "ok",
       contextPolicy: { trust: "untrusted_private_user_data" },
       context: { memory: { recordsUsed: 1 }, simulations: [] },
+    });
+  });
+
+  it("syncs the complete Claude memory snapshot through the OAuth-resolved Mora user", async () => {
+    const tools = registeredTools();
+    const memorySnapshot = "The user protects Friday mornings for deep work.";
+    const response = await tools.get("sync_claude_memory")!.callback(
+      { memorySnapshot } as never,
+      { authInfo }
+    );
+
+    expect(mocks.syncClaudeMemoryForUser).toHaveBeenCalledWith("mora-alpha", memorySnapshot);
+    expect(JSON.parse(response.content[0].text)).toMatchObject({
+      status: "ok",
+      outcome: "synced",
+      memoriesCreatedOrUpdated: 1,
     });
   });
 

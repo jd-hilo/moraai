@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { ingestMemory } from "@/lib/pipelines/memory-ingest";
 import type { MemoryUpdate } from "@/lib/vault/types";
+import { MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS } from "@/lib/mcp/claude-memory-constants";
+import { recordClaudeMemorySyncBaseline } from "@/lib/mcp/claude-memory-sync";
 
-export const MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS = 45_000;
+export { MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS } from "@/lib/mcp/claude-memory-constants";
 
 /**
  * Persist an explicitly approved snapshot that Claude supplied to the MCP
@@ -32,6 +34,8 @@ export async function enrollFromClaudeMemory(
       },
     ],
   });
+
+  await recordClaudeMemorySyncBaseline(userId, snapshot);
 
   await prisma.user.update({
     where: { id: userId },

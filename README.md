@@ -74,9 +74,11 @@ Open [http://localhost:3000](http://localhost:3000).
 ### Remote MCP connector
 
 Mora exposes an OAuth-protected Streamable HTTP MCP server at `/mcp`. It lets
-Claude recall a user's relevant Mora memory, save explicitly approved memories,
-and create, run, or read Mora simulations. Claude remains the conversational
-model; MCP recall and memory saving do not call OpenAI or Anthropic from Mora.
+Claude recall a user's relevant Mora memory, mirror the Claude memory snapshot
+the host makes available, save explicitly approved memories, and create, run,
+or read Mora simulations. Claude remains the conversational model. Direct MCP
+recall and individual memory saving are provider-free; snapshot synchronization
+uses Mora's existing memory-ingest pipeline only when the snapshot hash changes.
 
 Before testing the connector:
 
@@ -98,14 +100,22 @@ OAuth discovery is served from:
 Use separate staging and production Clerk applications and databases. The
 public setup experience is available at `/connect/claude`.
 
-The beta connector exposes `get_mora_status`, `recall_twin`, `save_memory`,
-`life_coach`, `list_simulations`, `get_simulation`, `create_simulation`,
-`simulate_future`, and `run_simulation`. `life_coach` returns authenticated,
-query-relevant memories and completed simulation evidence for Claude to reason
-over directly; it does not make a second model call. A user can simply say
-“Use Mora as my life coach” or “Give me advice.” Mora automatically returns a
-bounded cross-domain overview without requiring the user to name memories or
+The beta connector exposes `get_mora_status`, `enroll_from_claude_memory`,
+`sync_claude_memory`, `recall_twin`, `save_memory`, `life_coach`,
+`list_simulations`, `get_simulation`, `create_simulation`, `simulate_future`,
+and `run_simulation`. `life_coach` returns authenticated, query-relevant
+memories and completed simulation evidence for Claude to reason over directly;
+it does not make a second model call. A user can simply say “Use Mora as my
+life coach” or “Give me advice.” Mora automatically returns a bounded
+cross-domain overview without requiring the user to name memories or
 simulations first.
+
+Claude does not currently expose a memory-change webhook or an API that Mora
+can poll. Automatic memory synthesis therefore reaches Mora the next time the
+Mora connector is enabled in a non-incognito Claude conversation and Claude can
+send its current memory snapshot. Direct “remember this” requests are mirrored
+in the same turn. Identical snapshots are skipped using a private SHA-256 marker
+that is excluded from recall and the knowledge graph.
 
 ---
 
