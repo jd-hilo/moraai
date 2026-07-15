@@ -111,11 +111,13 @@ cross-domain overview without requiring the user to name memories or
 simulations first.
 
 Claude does not currently expose a memory-change webhook or an API that Mora
-can poll. Automatic memory synthesis therefore reaches Mora the next time the
-Mora connector is enabled in a non-incognito Claude conversation and Claude can
-send its current memory snapshot. Ordinary Claude memory requests do not write
-to Mora; users explicitly request a Mora snapshot sync or an exact Mora memory
-write. Identical snapshots and exact memories are skipped idempotently.
+can poll. Users can explicitly request a Mora snapshot sync or configure an
+approved recurring Claude Cowork task to push one snapshot through the
+authenticated connector each night. Scheduled tasks are a Claude beta feature
+on paid plans, so the setup page also supports pasting the same task into a
+normal Mora-enabled chat for a manual end-to-end test. Ordinary Claude memory
+requests do not write to Mora. Identical snapshots and exact memories are
+skipped idempotently.
 
 ---
 

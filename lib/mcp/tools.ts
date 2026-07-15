@@ -38,7 +38,7 @@ import {
 } from "@/lib/mcp/enrollment";
 import { buildLifeCoachContextForUser } from "@/lib/mcp/life-coach";
 import {
-  CLAUDE_SYNC_STATE_PATH,
+  getClaudeMemorySyncStatusForUser,
   syncClaudeMemoryForUser,
 } from "@/lib/mcp/claude-memory-sync";
 import { listVaultFilesForUser } from "@/lib/vault/storage";
@@ -382,16 +382,18 @@ export function registerMoraTools(server: McpServer): void {
         const user = await moraUser(authInfo);
         const files = await listVaultFilesForUser(user.id);
         const memoryAvailable = files.some((path) => path.endsWith(".md") && !path.startsWith("_"));
-        const claudeMemorySyncEnabled = files.includes(CLAUDE_SYNC_STATE_PATH);
+        const syncStatus = await getClaudeMemorySyncStatusForUser(user.id);
+        const claudeMemorySyncEnabled = syncStatus.enabled;
         return result({
           status: memoryAvailable ? "ok" : "setup_required",
           nextAction: memoryAvailable
             ? claudeMemorySyncEnabled
               ? "Mora is ready. If the user requested coaching or advice, call life_coach now and then give the actual coaching response; do not explain the tools or ask them to choose a topic. For a narrow personal factual question that is not advice, use recall_twin."
-              : "Mora is ready. If the user requested coaching or advice, call life_coach now and give the actual coaching response. Otherwise, ongoing Claude memory sync has not been approved; ask once for standing approval, then call sync_claude_memory with the complete available snapshot."
+              : "Mora is ready. If the user requested coaching or advice, call life_coach now and give the actual coaching response. No Claude memory snapshot has been synced yet; only call sync_claude_memory after an explicit sync request or while executing the user's approved recurring Mora backup task."
             : "Explain that Mora can enroll the Claude context it is allowed to see. Ask for explicit approval, then call enroll_from_claude_memory with a factual snapshot. Do not claim access to hidden Claude memory.",
           memoryAvailable,
           claudeMemorySyncEnabled,
+          lastClaudeMemorySyncAt: syncStatus.lastSyncedAt ?? null,
           onboardingComplete: user.onboardingComplete,
           setupUrl: setupUrl(),
         });
@@ -488,7 +490,7 @@ export function registerMoraTools(server: McpServer): void {
     {
       title: "Sync Claude memory to Mora",
       description:
-        "Mirror the complete Claude memory snapshot currently available to you into Mora. Use this after enrollment or another explicit standing sync approval, at the start of a conversation when Claude memory is available, and immediately after Claude adds or changes a normal memory. Do not include hidden, inferred, incognito, or conversation-only context.",
+        "Mirror the complete Claude memory snapshot currently available to you into Mora. Use only after an explicit current sync request or while executing the user's approved recurring Mora backup task. A normal request to Claude to remember something does not approve this tool call. Do not include hidden, inferred, incognito, or conversation-only context.",
       inputSchema: {
         memorySnapshot: z
           .string()
@@ -496,7 +498,7 @@ export function registerMoraTools(server: McpServer): void {
           .min(1)
           .max(MAX_CLAUDE_MEMORY_SNAPSHOT_CHARS)
           .describe(
-            "The complete current Claude memory text you can access, including the just-added memory. Do not invent or infer unavailable memory."
+            "The complete current Claude memory text you can access. Do not invent or infer unavailable memory."
           ),
       },
       annotations: WRITES_MEMORY,
