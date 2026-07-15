@@ -130,61 +130,7 @@ export default function ConnectClaudePage() {
           className="absolute inset-x-0 top-0 h-24 -translate-y-full bg-[linear-gradient(180deg,rgba(250,250,248,0),#ffffff)]"
         />
         <div className="mx-auto max-w-[1400px] px-5 py-20 md:px-10 lg:py-28">
-          <ScrollReveal>
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6f6bc9]">
-                Setup
-              </p>
-              <h2 className="mt-5 font-[Recoleta] text-3xl font-normal leading-[1.02] tracking-[-0.035em] md:text-5xl">
-                Connect and enroll in four steps.
-              </h2>
-              <p className="mx-auto mt-5 max-w-[54ch] text-sm leading-relaxed text-[#7b7a8b] md:text-base">
-                Add Mora once, approve the connection, then send one message to
-                create your private Mora memory.
-              </p>
-              <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-2xl border border-[#17171a]/10 bg-[#f8f8f7] p-2 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#da7756]/15 bg-white">
-                  <Image
-                    src="/claude-mark.png"
-                    alt=""
-                    width={600}
-                    height={600}
-                    className="h-7 w-7 object-contain"
-                  />
-                </span>
-                <span className="text-sm font-semibold text-[#242329]">
-                  Claude connector
-                </span>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={80}>
-            <div className="mx-auto mt-10 grid max-w-4xl gap-4 rounded-[1.75rem] border border-[#8f85df]/18 bg-[#faf9ff] p-5 text-left shadow-[0_18px_45px_-42px_rgba(79,65,151,0.45)] md:grid-cols-[1.05fr_0.95fr] md:p-6">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6f6bc9]">
-                  Exact connector URL
-                </p>
-                <div className="mt-3 flex min-w-0 items-center gap-2 rounded-xl border border-[#17171a]/10 bg-white p-2 pl-3">
-                  <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-[#514f59] sm:text-sm">
-                    {endpoint}
-                  </code>
-                  <CopyEndpoint endpoint={endpoint} compact />
-                </div>
-              </div>
-              <div className="rounded-xl border border-[#17171a]/8 bg-white/75 p-4">
-                <p className="text-sm font-semibold text-[#242329]">What to expect</p>
-                <p className="mt-2 text-sm leading-relaxed text-[#706e78]">
-                  Claude opens Mora for authorization. Sign in or create an
-                  account if asked, review the request, then approve it. If Mora
-                  recognizes an existing signed-in session, you may go straight
-                  to the approval screen.
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          <div className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <ScrollReveal className="h-full" delay={0}>
               <article>
               <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
