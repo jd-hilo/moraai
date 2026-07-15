@@ -24,6 +24,16 @@ describe("MCP contract", () => {
     expect(MORA_MCP_INSTRUCTIONS).toContain("Do not explain Mora's tools or capabilities");
   });
 
+  it("treats a direct Claude remember request as approval to mirror without asking again", () => {
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "The direct memory request is explicit per-write approval"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain("do not ask for a second confirmation");
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "even if Claude's native memory already contains the fact"
+    );
+  });
+
   it("fails closed when Clerk auth metadata has no user ID", () => {
     expect(() => clerkUserIdFromAuth(undefined)).toThrow();
     expect(() => clerkUserIdFromAuth({ extra: {} } as AuthInfo)).toThrow();

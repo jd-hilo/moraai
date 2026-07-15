@@ -226,6 +226,15 @@ describe("MCP tool surface", () => {
       readOnlyHint: false,
       idempotentHint: true,
     });
+    expect(tools.get("save_memory")?.config.description).toContain(
+      "request itself is explicit per-write approval"
+    );
+    expect(tools.get("save_memory")?.config.description).toContain(
+      "Do not ask for a second confirmation"
+    );
+    expect(tools.get("save_memory")?.config.description).toContain(
+      "even when Claude's native memory already contains the fact"
+    );
     for (const name of ["create_simulation", "simulate_future", "run_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         readOnlyHint: false,

@@ -113,9 +113,11 @@ simulations first.
 Claude does not currently expose a memory-change webhook or an API that Mora
 can poll. Automatic memory synthesis therefore reaches Mora the next time the
 Mora connector is enabled in a non-incognito Claude conversation and Claude can
-send its current memory snapshot. Direct “remember this” requests are mirrored
-in the same turn. Identical snapshots are skipped using a private SHA-256 marker
-that is excluded from recall and the knowledge graph.
+send its current memory snapshot. For direct “remember this” requests, users
+append the one-time Mora instruction shown at `/connect/claude` to Claude's
+account-wide profile instructions. The direct request then counts as per-write
+approval and Mora mirrors the exact fact in the same turn without a second
+confirmation. Identical snapshots and exact memories are skipped idempotently.
 
 ---
 
