@@ -31,6 +31,15 @@ describe("MCP contract", () => {
     expect(MORA_MCP_INSTRUCTIONS).toContain(
       "unless the user explicitly asks to save or synchronize data with Mora"
     );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "Enrollment approves and records that one baseline snapshot"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "approved recurring Mora backup task"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "is not approval to mirror it to Mora"
+    );
   });
 
   it("fails closed when Clerk auth metadata has no user ID", () => {

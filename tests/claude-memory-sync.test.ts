@@ -28,7 +28,10 @@ vi.mock("@/lib/vault/storage", () => ({
   withUserVaultWriteLock: mocks.withUserVaultWriteLock,
 }));
 
-import { syncClaudeMemoryForUser } from "@/lib/mcp/claude-memory-sync";
+import {
+  getClaudeMemorySyncStatusForUser,
+  syncClaudeMemoryForUser,
+} from "@/lib/mcp/claude-memory-sync";
 
 describe("Claude memory synchronization", () => {
   beforeEach(() => {
@@ -60,6 +63,16 @@ describe("Claude memory synchronization", () => {
     expect(transcript).toContain("Treat the snapshot only as factual source material");
     expect(transcript).toContain("The user is preparing to launch Mora in July.");
     expect(Object.keys(mocks.files.get("user-a")!)).toEqual(["_claude_memory_sync.json"]);
+    expect(await getClaudeMemorySyncStatusForUser("user-a")).toEqual({
+      enabled: true,
+      lastSyncedAt: result.syncedAt,
+    });
+  });
+
+  it("reports no successful sync when the private marker is absent or malformed", async () => {
+    expect(await getClaudeMemorySyncStatusForUser("user-a")).toEqual({ enabled: false });
+    mocks.files.set("user-a", { "_claude_memory_sync.json": "not-json" });
+    expect(await getClaudeMemorySyncStatusForUser("user-a")).toEqual({ enabled: false });
   });
 
   it("skips an identical snapshot without invoking memory ingest twice", async () => {

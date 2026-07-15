@@ -3,10 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-prompt";
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
+import { CopyNightlySyncPrompt } from "@/components/connect/copy-nightly-sync-prompt";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
 import { ScrollToSetup } from "@/components/connect/scroll-to-setup";
 import { CLAUDE_CONNECTOR_URL } from "@/lib/claude/connector";
-import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
+import {
+  CLAUDE_ENROLLMENT_PROMPT,
+  CLAUDE_NIGHTLY_SYNC_PROMPT,
+} from "@/lib/claude/enrollment-prompt";
 
 export const metadata: Metadata = {
   title: "Mora for Claude — Add the MCP connector",
@@ -66,8 +70,8 @@ export default function ConnectClaudePage() {
             </p>
             <p className="mt-4 max-w-[58ch] text-sm leading-relaxed text-[#7b7a8b]">
               Claude remains the model doing the reasoning. Mora securely
-              retrieves relevant context and, with your enrollment approval,
-              keeps Claude memory mirrored when the connector is active.
+              retrieves relevant context and can back up your Claude memory
+              when you request a sync or run an approved scheduled task.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -390,6 +394,66 @@ export default function ConnectClaudePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="bg-[#f0eef9]">
+        <ScrollReveal>
+          <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-12 px-5 py-20 md:px-10 lg:grid-cols-[0.78fr_1.22fr] lg:gap-20 lg:py-28">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6f6bc9]">
+                  Optional nightly backup
+                </p>
+                <span className="rounded-full border border-[#6f6bc9]/20 bg-white/70 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-[#625da8]">
+                  Cowork beta · Paid plans
+                </span>
+              </div>
+              <h2 className="mt-5 max-w-xl font-[Recoleta] text-3xl font-normal leading-[1.05] tracking-[-0.035em] md:text-5xl">
+                Let Claude push one safe snapshot each night.
+              </h2>
+              <p className="mt-5 max-w-[52ch] text-sm leading-relaxed text-[#656477] md:text-base">
+                Mora cannot pull private Claude memory from the outside. A
+                scheduled Claude task can instead send the complete snapshot
+                through your authenticated Mora connector. Repeat snapshots
+                are skipped automatically.
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-[#6f6bc9]/15 bg-white p-5 shadow-[0_24px_65px_-50px_rgba(79,65,151,0.55)] md:p-7">
+              <ol className="grid gap-4 text-sm text-[#514f59] md:grid-cols-3">
+                {[
+                  ["01", "Open Claude Cowork → Scheduled and create a new task."],
+                  ["02", "Paste the task below, choose Daily, and keep Mora connected."],
+                  ["03", "Run it once now. Claude should report updated or already current."],
+                ].map(([number, instruction]) => (
+                  <li key={number} className="rounded-2xl bg-[#f8f7fc] p-4 leading-relaxed">
+                    <span className="font-mono text-xs text-[#7b73cf]">{number}</span>
+                    <p className="mt-2">{instruction}</p>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="mt-5 rounded-2xl border border-[#17171a]/10 bg-[#fafafa] p-5">
+                <p className="font-mono text-xs leading-relaxed text-[#35343b] md:text-sm">
+                  {CLAUDE_NIGHTLY_SYNC_PROMPT}
+                </p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <CopyNightlySyncPrompt />
+                  <span className="text-xs leading-relaxed text-[#7b7a8b]">
+                    You can paste the same task into a normal Mora-enabled chat
+                    to test it before scheduling.
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs leading-relaxed text-[#777583]">
+                This does not add an account-wide instruction. Ordinary “remember
+                this” replies stay normal, and a failed run reports the problem
+                instead of claiming a backup happened.
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
       </section>
 
       <section className="bg-[#fafaf8]">

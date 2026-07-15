@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   enrollFromClaudeMemory: vi.fn(),
   buildLifeCoachContextForUser: vi.fn(),
   syncClaudeMemoryForUser: vi.fn(),
+  getClaudeMemorySyncStatusForUser: vi.fn(),
 }));
 
 vi.mock("@/lib/get-or-create-user", () => ({
@@ -47,8 +48,8 @@ vi.mock("@/lib/mcp/life-coach", () => ({
   buildLifeCoachContextForUser: mocks.buildLifeCoachContextForUser,
 }));
 vi.mock("@/lib/mcp/claude-memory-sync", () => ({
-  CLAUDE_SYNC_STATE_PATH: "_claude_memory_sync.json",
   syncClaudeMemoryForUser: mocks.syncClaudeMemoryForUser,
+  getClaudeMemorySyncStatusForUser: mocks.getClaudeMemorySyncStatusForUser,
 }));
 
 import { registerMoraTools } from "@/lib/mcp/tools";
@@ -181,6 +182,10 @@ describe("MCP tool surface", () => {
         changes: [{ summary: "Created goals/launch.md" }],
       },
     });
+    mocks.getClaudeMemorySyncStatusForUser.mockResolvedValue({
+      enabled: true,
+      lastSyncedAt: "2026-07-15T12:00:00.000Z",
+    });
   });
 
   it("registers exactly the Claude-native beta tools with safe annotations", () => {
@@ -226,6 +231,12 @@ describe("MCP tool surface", () => {
       readOnlyHint: false,
       idempotentHint: true,
     });
+    expect(tools.get("sync_claude_memory")?.config.description).toContain(
+      "approved recurring Mora backup task"
+    );
+    expect(tools.get("sync_claude_memory")?.config.description).toContain(
+      "normal request to Claude to remember something does not approve"
+    );
     expect(tools.get("save_memory")?.config.description).toContain(
       "A normal request to Claude to remember something does not approve this tool call"
     );
@@ -272,21 +283,25 @@ describe("MCP tool surface", () => {
     });
   });
 
-  it("reports whether ongoing Claude memory synchronization has standing approval", async () => {
+  it("reports the last successful Claude memory snapshot sync", async () => {
     const tools = registeredTools();
     const enabled = await tools.get("get_mora_status")!.callback({} as never, { authInfo });
-    mocks.listVaultFilesForUser.mockResolvedValueOnce(["identity/focus.md"]);
+    mocks.getClaudeMemorySyncStatusForUser.mockResolvedValueOnce({
+      enabled: false,
+    });
     const disabled = await tools.get("get_mora_status")!.callback({} as never, { authInfo });
 
     expect(JSON.parse(enabled.content[0].text)).toMatchObject({
       status: "ok",
       memoryAvailable: true,
       claudeMemorySyncEnabled: true,
+      lastClaudeMemorySyncAt: "2026-07-15T12:00:00.000Z",
     });
     expect(JSON.parse(disabled.content[0].text)).toMatchObject({
       status: "ok",
       memoryAvailable: true,
       claudeMemorySyncEnabled: false,
+      lastClaudeMemorySyncAt: null,
     });
   });
 
