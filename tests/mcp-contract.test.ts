@@ -24,11 +24,13 @@ describe("MCP contract", () => {
     expect(MORA_MCP_INSTRUCTIONS).toContain("Do not explain Mora's tools or capabilities");
   });
 
-  it("treats a direct Claude remember request as approval to mirror without asking again", () => {
-    expect(MORA_MCP_INSTRUCTIONS).toContain("one direct command to store X");
-    expect(MORA_MCP_INSTRUCTIONS).toContain("mirror_claude_memory_fact");
-    expect(MORA_MCP_INSTRUCTIONS).toContain("Do not ask for another confirmation");
-    expect(MORA_MCP_INSTRUCTIONS).toContain("because Claude already had X");
+  it("does not turn ordinary Claude memory requests into Mora writes", () => {
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "A normal request to Claude to remember, add, update, or correct something is not approval"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "unless the user explicitly asks to save or synchronize data with Mora"
+    );
   });
 
   it("fails closed when Clerk auth metadata has no user ID", () => {

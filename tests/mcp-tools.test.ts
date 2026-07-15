@@ -190,7 +190,6 @@ describe("MCP tool surface", () => {
       "enroll_from_claude_memory",
       "recall_twin",
       "sync_claude_memory",
-      "mirror_claude_memory_fact",
       "save_memory",
       "life_coach",
       "list_simulations",
@@ -227,14 +226,8 @@ describe("MCP tool surface", () => {
       readOnlyHint: false,
       idempotentHint: true,
     });
-    expect(tools.get("mirror_claude_memory_fact")?.config.description).toContain(
-      "one command with two storage destinations"
-    );
-    expect(tools.get("mirror_claude_memory_fact")?.config.description).toContain(
-      "Do not ask for another confirmation"
-    );
-    expect(tools.get("mirror_claude_memory_fact")?.config.description).toContain(
-      "Claude already had X"
+    expect(tools.get("save_memory")?.config.description).toContain(
+      "A normal request to Claude to remember something does not approve this tool call"
     );
     for (const name of ["create_simulation", "simulate_future", "run_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
