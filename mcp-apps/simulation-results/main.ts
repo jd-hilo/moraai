@@ -57,6 +57,8 @@ const modeStatus = document.querySelector<HTMLElement>("#mode-status")!;
 type ReadingDestination = "fullscreen" | "inline" | "external";
 
 let simulationUrl = "";
+let hasSynthesis = false;
+let readingExpanded = false;
 
 function announce(message: string) {
   modeStatus.textContent = "";
@@ -65,10 +67,18 @@ function announce(message: string) {
   });
 }
 
-function setSynthesisVisibility(visible: boolean) {
-  synthesisPanel.hidden = !visible;
+function setReadingVisibility(visible: boolean) {
+  readingExpanded = visible;
+  const narrative = pathDetail.querySelector<HTMLElement>(".narrative");
+  if (narrative) narrative.dataset.expanded = String(visible);
+
+  synthesisPanel.hidden = !visible || !hasSynthesis;
   synthesisToggle.setAttribute("aria-expanded", String(visible));
-  synthesisToggle.textContent = visible ? "Hide Mora synthesis" : "View Mora synthesis";
+  const isFullscreen = document.documentElement.dataset.displayMode === "fullscreen";
+  synthesisToggle.hidden = isFullscreen && !hasSynthesis;
+  synthesisToggle.textContent = isFullscreen
+    ? visible ? "Hide Mora synthesis" : "View Mora synthesis"
+    : visible ? "Show less" : "Read full path";
 }
 
 function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
@@ -77,7 +87,9 @@ function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
   displayModeToggle.hidden = readingMode !== "fullscreen";
 
   if (readingMode === "inline") {
-    setSynthesisVisibility(false);
+    setReadingVisibility(false);
+  } else {
+    setReadingVisibility(readingExpanded);
   }
 }
 
@@ -173,33 +185,12 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
   const narrative = document.createElement("p");
   narrative.className = "narrative";
   narrative.id = "path-narrative";
-  narrative.dataset.expanded = "false";
+  narrative.dataset.expanded = String(readingExpanded);
   narrative.textContent = path.output;
 
   const actions = document.createElement("div");
   actions.className = "detail-actions";
-  const readButton = document.createElement("button");
-  readButton.type = "button";
-  readButton.className = "read-button";
-  readButton.setAttribute("aria-expanded", "false");
-  readButton.setAttribute("aria-controls", narrative.id);
-  readButton.textContent = "Read full path";
-  readButton.addEventListener("click", async () => {
-    if (narrative.dataset.expanded === "true") {
-      narrative.dataset.expanded = "false";
-      readButton.setAttribute("aria-expanded", "false");
-      readButton.textContent = "Read full path";
-      return;
-    }
-
-    const destination = await enterReadingMode(readButton);
-    if (destination === "inline") {
-      narrative.dataset.expanded = "true";
-      readButton.setAttribute("aria-expanded", "true");
-      readButton.textContent = "Show less";
-    }
-  });
-  actions.append(readButton, synthesisToggle);
+  actions.append(synthesisToggle);
 
   const footer = document.createElement("div");
   footer.className = "detail-footer";
@@ -237,12 +228,11 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
 
 function renderReport(result: SimulationResult) {
   synthesisElement.replaceChildren();
-  setSynthesisVisibility(false);
+  hasSynthesis = result.report !== null;
+  setReadingVisibility(false);
   if (!result.report) {
-    synthesisToggle.hidden = true;
     return;
   }
-  synthesisToggle.hidden = false;
 
   const intro = document.createElement("div");
   intro.className = "synthesis-intro";
@@ -329,14 +319,14 @@ function renderSimulation(result: SimulationResult) {
 }
 
 synthesisToggle.addEventListener("click", async () => {
-  const shouldShow = synthesisPanel.hidden;
+  const shouldShow = !readingExpanded;
   if (!shouldShow) {
-    setSynthesisVisibility(false);
+    setReadingVisibility(false);
     return;
   }
 
   const destination = await enterReadingMode(synthesisToggle);
-  if (destination !== "external") setSynthesisVisibility(true);
+  if (destination !== "external") setReadingVisibility(true);
 });
 
 displayModeToggle.addEventListener("click", async () => {

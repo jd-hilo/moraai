@@ -169,7 +169,7 @@
       }
 
       .path-row:hover { color: var(--text); background: var(--surface-subtle); }
-      .path-row:focus-visible, .toggle:focus-visible, .read-button:focus-visible, .display-mode-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .path-row:focus-visible, .toggle:focus-visible, .display-mode-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       .path-row:active, .toggle:active { transform: translateY(1px); }
       .path-row[aria-selected="true"] { color: var(--text); background: var(--accent-soft); border-color: rgba(114, 104, 199, .18); }
       .path-number, .path-probability { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -204,16 +204,6 @@
       .premise { grid-column: 1; grid-row: 2; }
       .narrative { grid-column: 2; grid-row: 1 / span 2; }
       .detail-actions { grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
-      .read-button {
-        padding: 3px 0;
-        color: var(--accent);
-        font-size: 11px;
-        font-weight: 600;
-        background: transparent;
-        border: 0;
-        cursor: pointer;
-      }
-      .read-button::after { margin-left: 5px; content: "↗"; }
       .detail-footer { grid-column: 1; grid-row: 3; display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 0; padding-top: 9px; color: var(--quiet); border-top: 1px solid var(--line); font-size: 10px; }
       .detail-footer strong { color: var(--text); font-weight: 600; }
       .context-note { margin-left: auto; color: var(--accent); }
@@ -262,8 +252,6 @@
         display: block;
         overflow: visible;
       }
-      html[data-display-mode="fullscreen"] .read-button { display: none; }
-
       @keyframes pulse { 50% { opacity: .45; } }
       @media (prefers-reduced-motion: reduce) {
         .state-line { animation: none; }
@@ -321,7 +309,7 @@
           </div>
           <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
           <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
-          <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="synthesis-panel" hidden>View Mora synthesis</button>
+          <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>
           <section id="synthesis-panel" class="synthesis" hidden>
             <h2>Mora synthesis</h2>
             <div id="synthesis" class="synthesis-body"></div>
