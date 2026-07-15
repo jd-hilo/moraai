@@ -86,7 +86,7 @@ Before testing the connector:
    keys are not required for MCP recall or memory saving, though Mora's existing
    web chat, imports, and simulations still use them.
 4. Deploy to a publicly reachable HTTPS URL; local-only MCP endpoints cannot be reached by Claude.ai.
-5. In Claude, open **Settings → Connectors → Add custom connector** and enter `https://your-origin.example/mcp`.
+5. In Claude, open **Customize → Connectors → + → Add custom connector** and enter `https://your-origin.example/mcp`.
 
 The canonical production connector URL is `https://www.mymora.app/mcp`.
 

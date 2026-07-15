@@ -70,12 +70,10 @@ const INSTRUCTIONS: Record<Source, { title: string; icon: React.ReactNode; steps
       <Image src="/chatgpt-logo.png" alt="ChatGPT" width={40} height={40} style={{ borderRadius: 10, flexShrink: 0 }} />
     ),
     steps: [
-      <><A href="https://chat.openai.com">Open ChatGPT</A> and sign in</>,
-      <>Click your profile icon → <A href="https://chatgpt.com/#settings/DataControls">Settings</A></>,
-      <>Go to <strong>Data controls</strong> → click <strong>Export data</strong></>,
-      <>OpenAI emails you a link — download the ZIP</>,
-      <>Unzip it and find <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 5px", borderRadius: 4, fontSize: 13 }}>conversations.json</code> inside</>,
-      <>Drop that file below ↓</>,
+      <><A href="https://chatgpt.com/#settings/DataControls">Open ChatGPT → Settings → Data controls</A></>,
+      <>Choose <strong>Export data</strong> and confirm the export</>,
+      <>Download the ZIP from the email OpenAI sends you</>,
+      <>Upload the ZIP below—no need to unzip it</>,
     ],
   },
   claude: {
@@ -84,12 +82,10 @@ const INSTRUCTIONS: Record<Source, { title: string; icon: React.ReactNode; steps
       <Image src="/claude-logo.png" alt="Claude" width={40} height={40} style={{ borderRadius: 10, flexShrink: 0 }} />
     ),
     steps: [
-      <><A href="https://claude.ai">Open Claude</A> and sign in</>,
-      <>Click your profile → <A href="https://claude.ai/settings">Settings</A></>,
-      <>Go to <strong>Privacy</strong> → click <strong>Export data</strong></>,
-      <>Anthropic emails you a download link</>,
-      <>Download the ZIP — find <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 5px", borderRadius: 4, fontSize: 13 }}>conversations.json</code> inside</>,
-      <>Drop that file below ↓</>,
+      <><A href="https://claude.ai/settings">Open Claude → Settings → Privacy</A></>,
+      <>Choose <strong>Export data</strong></>,
+      <>Download the ZIP from the email Anthropic sends you</>,
+      <>Upload the ZIP below—no need to unzip it</>,
     ],
   },
 };
@@ -122,18 +118,23 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
         background: "rgba(10,8,20,0.45)",
         backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 24,
+        padding: 16,
       }}
     >
       {/* sheet */}
       <div
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`import-${source}-title`}
         style={{
           background: "#fff",
           borderRadius: 24,
           width: "100%",
           maxWidth: 480,
           padding: "28px 28px 24px",
+          maxHeight: "calc(100dvh - 32px)",
+          overflowY: "auto",
           boxShadow: "0 32px 80px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08)",
           position: "relative",
           animation: "modal-in 0.25s cubic-bezier(0.22,1,0.36,1)",
@@ -142,6 +143,7 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
         {/* close */}
         <button
           onClick={onClose}
+          aria-label="Close import instructions"
           style={{
             position: "absolute", top: 16, right: 16,
             width: 28, height: 28, borderRadius: "50%",
@@ -160,7 +162,7 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
             fontFamily: "'Recoleta', 'DM Sans', serif",
             fontSize: 20, fontWeight: 400,
             color: "#0d0d0d", letterSpacing: "-0.02em", margin: 0,
-          }}>
+          }} id={`import-${source}-title`}>
             {info.title}
           </h2>
         </div>
@@ -173,7 +175,8 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
         </div>
 
         {/* drop zone */}
-        <div
+        <button
+          type="button"
           onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -183,10 +186,12 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
             border: `2px dashed ${isDragging ? "#c6a6f0" : "rgba(0,0,0,0.12)"}`,
             borderRadius: 14,
             padding: "26px 20px",
+            width: "100%",
             textAlign: "center",
             cursor: "pointer",
             background: isDragging ? "rgba(198,166,240,0.07)" : "#fafafa",
             transition: "all 0.18s",
+            fontFamily: "'DM Sans', sans-serif",
           }}
         >
           <div style={{ fontSize: 26, marginBottom: 8 }}>📂</div>
@@ -194,14 +199,14 @@ function ImportModal({ source, onClose, onFile }: ModalProps) {
             Drop conversations.json or ZIP
           </div>
           <div style={{ fontSize: 12, color: "#aaa" }}>or click to browse</div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,.zip"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f, source); }}
-            style={{ display: "none" }}
-          />
-        </div>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,.zip"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f, source); }}
+          style={{ display: "none" }}
+        />
 
         <p style={{ fontSize: 11, color: "#bbb", textAlign: "center", marginTop: 12 }}>
           Your data stays private and never leaves your account.
@@ -515,11 +520,11 @@ export function ImportWizard() {
           </div>
 
           <h1 style={{ ...h1, fontSize: 26, marginBottom: 8 }}>
-            Bring your chats with you.
+            Start with history—or from here.
           </h1>
           <p style={{ ...body, marginBottom: 36 }}>
-            Mora learns who you are from your past conversations.
-            Import from ChatGPT or Claude to hit the ground running.
+            Import past conversations to personalize Mora now, or skip this
+            optional step and let Mora learn as you chat.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
@@ -551,7 +556,7 @@ export function ImportWizard() {
               padding: "8px 0", fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            Skip — Mora will learn as we go
+            Skip import and start chatting
           </button>
         </div>
       </div>
