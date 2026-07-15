@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-display-mode="inline">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -26,7 +26,19 @@
       html, body { min-width: 0; margin: 0; background: var(--bg); }
       body { color: var(--text); -webkit-font-smoothing: antialiased; }
       button { font: inherit; }
+      button:disabled { cursor: wait; opacity: .62; }
       [hidden] { display: none !important; }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
       .shell {
         width: 100%;
@@ -100,6 +112,7 @@
       }
 
       .header-copy { min-width: 0; }
+      .header-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
       .brand-line { margin-bottom: 17px; }
       .eyebrow {
         margin: 0 0 7px;
@@ -112,6 +125,18 @@
       h1 { margin: 0; font-size: clamp(24px, 5vw, 34px); font-weight: 500; line-height: 1.12; letter-spacing: -.035em; }
       .meta { max-width: 700px; margin: 9px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
       .count { color: var(--accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+      .display-mode-toggle {
+        min-height: 34px;
+        padding: 0 12px;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
+      }
+      .display-mode-toggle:hover { background: var(--surface-subtle); }
 
       .content { padding: 22px 28px 30px; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 11px; }
@@ -146,7 +171,7 @@
       }
 
       .path-row:hover { color: var(--text); background: var(--surface-subtle); }
-      .path-row:focus-visible, .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .path-row:focus-visible, .toggle:focus-visible, .read-button:focus-visible, .display-mode-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       .path-row:active, .toggle:active { transform: translateY(1px); }
       .path-row[aria-selected="true"] { color: var(--text); background: var(--accent-soft); border-color: rgba(114, 104, 199, .18); }
       .path-number, .path-probability { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -163,11 +188,27 @@
       .probability { color: var(--accent); font-size: 11px; font-weight: 600; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
       .premise { max-width: 760px; margin: 16px 0 0; padding-left: 13px; color: var(--muted); border-left: 2px solid #d9d5ed; font-size: 12px; line-height: 1.6; }
       .narrative { max-width: 800px; margin: 21px 0 0; color: #35353b; font-size: 13px; line-height: 1.75; white-space: pre-wrap; }
+      .narrative[data-expanded="false"] {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+      .read-button {
+        padding: 3px 0;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 600;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+      }
+      .read-button::after { margin-left: 5px; content: "↗"; }
       .detail-footer { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 24px; padding-top: 14px; color: var(--quiet); border-top: 1px solid var(--line); font-size: 10px; }
       .detail-footer strong { color: var(--text); font-weight: 600; }
       .context-note { margin-left: auto; color: var(--accent); }
 
-      .synthesis-control { display: flex; justify-content: flex-start; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
       .toggle { min-height: 36px; padding: 0 13px; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease; }
       .toggle:hover { background: var(--surface-subtle); }
       .synthesis { margin-top: 22px; padding-top: 24px; border-top: 1px solid var(--line); }
@@ -181,16 +222,46 @@
       .synthesis-body li { position: relative; padding-left: 14px; }
       .synthesis-body li::before { position: absolute; top: .72em; left: 0; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); content: ""; }
 
+      html[data-display-mode="inline"] .header { padding-top: 18px; padding-bottom: 16px; }
+      html[data-display-mode="inline"] .brand-line { margin-bottom: 10px; }
+      html[data-display-mode="inline"] h1 { font-size: clamp(22px, 5vw, 28px); }
+      html[data-display-mode="inline"] .meta {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-top: 6px;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+      }
+      html[data-display-mode="inline"] .content { padding-top: 16px; padding-bottom: 18px; }
+      html[data-display-mode="inline"] .section-heading { margin-bottom: 8px; }
+      html[data-display-mode="inline"] .path-detail { padding-top: 17px; padding-bottom: 2px; }
+      html[data-display-mode="inline"] .detail-kicker { margin-bottom: 4px; }
+      html[data-display-mode="inline"] .detail-heading h2 { font-size: clamp(18px, 4vw, 21px); }
+      html[data-display-mode="inline"] .premise {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-top: 11px;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      html[data-display-mode="inline"] .narrative { margin-top: 13px; line-height: 1.65; }
+      html[data-display-mode="inline"] .detail-footer { margin-top: 14px; padding-top: 10px; }
+      html[data-display-mode="fullscreen"] .narrative[data-expanded="false"] {
+        display: block;
+        overflow: visible;
+      }
+      html[data-display-mode="fullscreen"] .read-button { display: none; }
+
       @keyframes pulse { 50% { opacity: .45; } }
       @media (prefers-reduced-motion: reduce) {
         .state-line { animation: none; }
-        .path-row, .toggle { transition: none; }
+        .path-row, .toggle, .display-mode-toggle { transition: none; }
       }
 
       @media (max-width: 600px) {
         .state, .header, .content { padding-right: 17px; padding-left: 17px; }
         .header { grid-template-columns: 1fr; gap: 12px; }
-        .count { justify-self: start; }
+        .header-aside { align-items: flex-start; }
         .section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
         .path-row { min-width: 136px; }
         .detail-heading { grid-template-columns: 1fr; gap: 8px; }
@@ -218,7 +289,10 @@
             <h1 id="title">Simulation results</h1>
             <p id="meta" class="meta"></p>
           </div>
-          <span id="count" class="count"></span>
+          <div class="header-aside">
+            <span id="count" class="count"></span>
+            <button id="display-mode-toggle" class="display-mode-toggle" type="button" hidden>Back to chat</button>
+          </div>
         </header>
         <div class="content">
           <div class="section-heading">
@@ -227,13 +301,12 @@
           </div>
           <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
           <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
-          <div class="synthesis-control">
-            <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="synthesis-panel">View Mora synthesis</button>
-          </div>
+          <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="synthesis-panel" hidden>View Mora synthesis</button>
           <section id="synthesis-panel" class="synthesis" hidden>
             <h2>Mora synthesis</h2>
             <div id="synthesis" class="synthesis-body"></div>
           </section>
+          <p id="mode-status" class="sr-only" role="status" aria-live="polite"></p>
         </div>
       </section>
     </main>
