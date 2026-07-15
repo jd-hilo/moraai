@@ -128,6 +128,48 @@ export function selectRelevantMemory(
   return { kind: "ready", memory, recordsUsed: selected.length };
 }
 
+/**
+ * Build a cross-domain memory overview for an explicit, broad coaching request.
+ * Prefer one record per category before filling remaining slots, and never
+ * expose filenames or frontmatter.
+ */
+export function selectBroadMemory(
+  files: Record<string, string>,
+  maxRecords = 6,
+  maxTokens = 2_000
+): RecallResult {
+  const records = Object.entries(files)
+    .filter(([path, content]) => path.endsWith(".md") && !path.startsWith("_") && content.trim())
+    .map(([path, content]) => ({ path, content: stripFrontmatter(content) }))
+    .filter(({ content }) => content.length > 0)
+    .sort((a, b) => a.path.localeCompare(b.path));
+  if (records.length === 0) return { kind: "empty", memory: "", recordsUsed: 0 };
+
+  const selected: typeof records = [];
+  const selectedPaths = new Set<string>();
+  for (const category of MEMORY_CATEGORIES) {
+    const record = records.find(({ path }) => path.startsWith(`${category}/`));
+    if (!record) continue;
+    selected.push(record);
+    selectedPaths.add(record.path);
+    if (selected.length === maxRecords) break;
+  }
+  for (const record of records) {
+    if (selected.length === maxRecords) break;
+    if (selectedPaths.has(record.path)) continue;
+    selected.push(record);
+  }
+
+  return {
+    kind: "ready",
+    memory: truncateToTokens(
+      selected.map(({ content }) => `<memory_record>\n${content}\n</memory_record>`).join("\n\n"),
+      maxTokens
+    ),
+    recordsUsed: selected.length,
+  };
+}
+
 export async function recallMemoryForUser(
   userId: string,
   query: string,
@@ -140,6 +182,14 @@ export async function recallMemoryForUser(
     maxRecords,
     maxTokens
   );
+}
+
+export async function recallBroadMemoryForUser(
+  userId: string,
+  maxRecords = 6,
+  maxTokens = 2_000
+): Promise<RecallResult> {
+  return selectBroadMemory(await readAllVaultFilesForUser(userId), maxRecords, maxTokens);
 }
 
 export interface SaveMemoryInput {

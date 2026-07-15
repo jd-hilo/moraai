@@ -1,4 +1,4 @@
-import { recallMemoryForUser } from "@/lib/mcp/memory";
+import { recallBroadMemoryForUser, recallMemoryForUser } from "@/lib/mcp/memory";
 import { listCompletedSimulationsForUser } from "@/lib/skills/simulations/service";
 import type {
   Possibility,
@@ -15,6 +15,8 @@ export const LIFE_COACH_MEMORY_MAX_RECORDS = 6;
 export const LIFE_COACH_SIMULATION_SCAN_LIMIT = 20;
 export const LIFE_COACH_SIMULATION_MAX_RESULTS = 2;
 export const LIFE_COACH_PATH_MAX_RESULTS = 3;
+export const LIFE_COACH_BROAD_SIMULATION_MAX_RESULTS = 12;
+export const LIFE_COACH_BROAD_MEMORY_MAX_TOKENS = 2_000;
 
 const REPORT_MAX_TOKENS = 800;
 const PATH_OUTPUT_MAX_TOKENS = 450;
@@ -83,6 +85,7 @@ export interface LifeCoachSimulationContext {
 }
 
 export interface LifeCoachContextResult {
+  mode: "focused" | "overview";
   status: "ok" | "setup_required" | "no_match";
   errorCode?: "MORA_CONTEXT_NOT_READY" | "NO_RELEVANT_MORA_CONTEXT";
   nextAction: string;
@@ -121,6 +124,43 @@ function queryTerms(query: string): string[] {
   const all = normalize(query).split(" ").filter((term) => term.length > 1);
   const meaningful = all.filter((term) => !STOP_WORDS.has(term));
   return [...new Set(meaningful.length > 0 ? meaningful : all)];
+}
+
+const BROAD_COACHING_PHRASES = [
+  "life coach",
+  "coach me",
+  "be my coach",
+  "give me advice",
+  "some advice",
+] as const;
+const BROAD_COACHING_FILLER = new Set([
+  ...STOP_WORDS,
+  "and",
+  "as",
+  "be",
+  "can",
+  "coach",
+  "give",
+  "life",
+  "me",
+  "mora",
+  "my",
+  "please",
+  "right",
+  "some",
+  "today",
+  "to",
+  "use",
+  "whatever",
+]);
+
+export function isBroadLifeCoachRequest(query: string): boolean {
+  const normalized = normalize(query);
+  if (!BROAD_COACHING_PHRASES.some((phrase) => normalized.includes(phrase))) return false;
+  const topicTerms = normalized
+    .split(" ")
+    .filter((term) => term.length > 1 && !BROAD_COACHING_FILLER.has(term));
+  return topicTerms.length === 0;
 }
 
 function countTermMatches(value: string, terms: string[]): number {
@@ -234,6 +274,40 @@ function toContext(simulation: SimulationDetail, terms: string[]): LifeCoachSimu
   };
 }
 
+function toOverviewContext(simulation: SimulationDetail): LifeCoachSimulationContext {
+  const topPath = selectPaths(simulation, [])[0];
+  const report = simulation.report!;
+  const compactSection = (section: ReportSection): ReportSection => ({
+    title: truncateToTokens(section.title, 30),
+    points: section.points.slice(0, 1).map((point) => truncateToTokens(point, 35)),
+  });
+  return {
+    title: truncateToTokens(simulation.title, 50),
+    scenario: truncateToTokens(simulation.scenario, 80),
+    timeHorizonYears: simulation.timeHorizonYears,
+    completedAt: simulation.updatedAt,
+    report: {
+      verdict: truncateToTokens(report.verdict, 70),
+      overallConfidence: report.overallConfidence,
+      summary: truncateToTokens(report.summary, 90),
+      outcomes: compactSection(report.outcomes),
+      risks: compactSection(report.risks),
+      insights: compactSection(report.insights),
+    },
+    paths: topPath
+      ? [
+          {
+            title: truncateToTokens(topPath.possibility.title, 40),
+            premise: truncateToTokens(topPath.possibility.description, 60),
+            probability: topPath.possibility.probability,
+            confidence: topPath.run.confidence ?? null,
+            narrative: truncateToTokens(topPath.run.output, 120),
+          },
+        ]
+      : [],
+  };
+}
+
 /**
  * Select only query-relevant, completed simulations. The returned DTO excludes
  * database IDs, user IDs, vault paths, errors, and incomplete run data.
@@ -259,6 +333,21 @@ export function selectRelevantCompletedSimulations(
     )
     .slice(0, LIFE_COACH_SIMULATION_MAX_RESULTS)
     .map(({ simulation }) => toContext(simulation, terms));
+}
+
+export function selectBroadCompletedSimulations(
+  simulations: SimulationDetail[]
+): LifeCoachSimulationContext[] {
+  return simulations
+    .filter(
+      (simulation) =>
+        simulation.status === "complete" &&
+        simulation.report !== null &&
+        completedSimulationPaths(simulation).length > 0
+    )
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+    .slice(0, LIFE_COACH_BROAD_SIMULATION_MAX_RESULTS)
+    .map(toOverviewContext);
 }
 
 function approximateTokens(value: unknown): number {
@@ -310,6 +399,7 @@ function enforceContextBudget(result: LifeCoachContextResult): void {
 }
 
 function baseResult(
+  mode: LifeCoachContextResult["mode"],
   status: LifeCoachContextResult["status"],
   memory: LifeCoachContextResult["context"]["memory"],
   simulations: LifeCoachSimulationContext[]
@@ -317,10 +407,13 @@ function baseResult(
   const context = { memory, simulations };
   const pathsUsed = simulations.reduce((count, simulation) => count + simulation.paths.length, 0);
   const result: LifeCoachContextResult = {
+    mode,
     status,
     nextAction:
       status === "ok"
-        ? "Claude should now reason over the relevant evidence and answer the user's question in its own voice. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
+        ? mode === "overview"
+          ? "Claude should now act as the user's life coach in its own voice: synthesize cross-cutting themes from the overview, identify a few useful priorities or observations, and give practical advice without asking the user to name memories or simulations. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
+          : "Claude should now reason over the relevant evidence and answer the user's question in its own voice. Calibrate claims, distinguish remembered facts from simulated possibilities, and do not mention storage details."
         : status === "setup_required"
           ? "Give useful general guidance without pretending Mora supplied personal context. You may offer the approved Mora enrollment flow if personalization would help."
           : "Answer without claiming Mora supplied relevant personal context, or ask one focused question that would make the request more specific.",
@@ -355,24 +448,38 @@ export async function buildLifeCoachContextForUser(
   userId: string,
   query: string
 ): Promise<LifeCoachContextResult> {
+  const mode = isBroadLifeCoachRequest(query) ? "overview" : "focused";
   const [memory, completedSimulations] = await Promise.all([
-    recallMemoryForUser(
-      userId,
-      query,
-      LIFE_COACH_MEMORY_MAX_RECORDS,
-      LIFE_COACH_MEMORY_MAX_TOKENS
-    ),
+    mode === "overview"
+      ? recallBroadMemoryForUser(
+          userId,
+          LIFE_COACH_MEMORY_MAX_RECORDS,
+          LIFE_COACH_BROAD_MEMORY_MAX_TOKENS
+        )
+      : recallMemoryForUser(
+          userId,
+          query,
+          LIFE_COACH_MEMORY_MAX_RECORDS,
+          LIFE_COACH_MEMORY_MAX_TOKENS
+        ),
     listCompletedSimulationsForUser(userId, LIFE_COACH_SIMULATION_SCAN_LIMIT),
   ]);
-  const simulations = selectRelevantCompletedSimulations(query, completedSimulations);
+  const simulations =
+    mode === "overview"
+      ? selectBroadCompletedSimulations(completedSimulations)
+      : selectRelevantCompletedSimulations(query, completedSimulations);
   const memoryContext = {
     state: memory.kind,
     recordsUsed: memory.recordsUsed,
-    text: truncateToTokens(memory.memory, LIFE_COACH_MEMORY_MAX_TOKENS),
+    text: truncateToTokens(
+      memory.memory,
+      mode === "overview" ? LIFE_COACH_BROAD_MEMORY_MAX_TOKENS : LIFE_COACH_MEMORY_MAX_TOKENS
+    ),
   };
   const hasContext = memory.kind === "ready" || simulations.length > 0;
   const hasAnyStoredContext = memory.kind !== "empty" || completedSimulations.length > 0;
   const result = baseResult(
+    mode,
     hasContext ? "ok" : hasAnyStoredContext ? "no_match" : "setup_required",
     memoryContext,
     simulations

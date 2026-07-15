@@ -102,7 +102,10 @@ The beta connector exposes `get_mora_status`, `recall_twin`, `save_memory`,
 `life_coach`, `list_simulations`, `get_simulation`, `create_simulation`,
 `simulate_future`, and `run_simulation`. `life_coach` returns authenticated,
 query-relevant memories and completed simulation evidence for Claude to reason
-over directly; it does not make a second model call.
+over directly; it does not make a second model call. A user can simply say
+“Use Mora as my life coach” or “Give me advice.” Mora automatically returns a
+bounded cross-domain overview without requiring the user to name memories or
+simulations first.
 
 ---
 

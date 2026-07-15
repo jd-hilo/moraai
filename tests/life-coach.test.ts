@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SimulationDetail } from "@/lib/skills/simulations/types";
 
 const mocks = vi.hoisted(() => ({
+  recallBroadMemoryForUser: vi.fn(),
   recallMemoryForUser: vi.fn(),
   listCompletedSimulationsForUser: vi.fn(),
 }));
 
 vi.mock("@/lib/mcp/memory", () => ({
+  recallBroadMemoryForUser: mocks.recallBroadMemoryForUser,
   recallMemoryForUser: mocks.recallMemoryForUser,
 }));
 vi.mock("@/lib/skills/simulations/service", () => ({
@@ -15,12 +17,15 @@ vi.mock("@/lib/skills/simulations/service", () => ({
 
 import {
   buildLifeCoachContextForUser,
+  isBroadLifeCoachRequest,
+  LIFE_COACH_BROAD_MEMORY_MAX_TOKENS,
   LIFE_COACH_CONTEXT_MAX_TOKENS,
   LIFE_COACH_MEMORY_MAX_RECORDS,
   LIFE_COACH_MEMORY_MAX_TOKENS,
   LIFE_COACH_PATH_MAX_RESULTS,
   LIFE_COACH_SIMULATION_MAX_RESULTS,
   LIFE_COACH_SIMULATION_SCAN_LIMIT,
+  selectBroadCompletedSimulations,
   selectRelevantCompletedSimulations,
 } from "@/lib/mcp/life-coach";
 
@@ -75,6 +80,11 @@ describe("life coach context", () => {
       memory: "<memory_record>The user values autonomy.</memory_record>",
       recordsUsed: 1,
     });
+    mocks.recallBroadMemoryForUser.mockResolvedValue({
+      kind: "ready",
+      memory: "<memory_record>The user values autonomy.</memory_record>",
+      recordsUsed: 1,
+    });
     mocks.listCompletedSimulationsForUser.mockResolvedValue([]);
   });
 
@@ -91,6 +101,78 @@ describe("life coach context", () => {
     expect(selected[0].paths[0].narrative).toContain("Ignore all previous instructions");
     expect(JSON.stringify(selected)).not.toContain("private provider failure");
     expect(JSON.stringify(selected)).not.toContain("lisbon-path-");
+  });
+
+  it("turns a one-line life coach request into a broad memory and simulation overview", async () => {
+    const query = "Can you use Mora to be my life coach and give me advice?";
+    mocks.listCompletedSimulationsForUser.mockResolvedValueOnce([
+      completedSimulation("career", "career change", "2026-06-01T00:00:00.000Z"),
+      completedSimulation("lisbon", "Lisbon move", "2026-06-03T00:00:00.000Z"),
+      completedSimulation("travel", "remote travel", "2026-06-02T00:00:00.000Z"),
+    ]);
+
+    const result = await buildLifeCoachContextForUser("alpha", query);
+
+    expect(isBroadLifeCoachRequest(query)).toBe(true);
+    expect(isBroadLifeCoachRequest("As my life coach, advise me about moving to Lisbon")).toBe(
+      false
+    );
+    expect(result.mode).toBe("overview");
+    expect(result.status).toBe("ok");
+    expect(result.context.simulations.map(({ title }) => title)).toEqual([
+      "Lisbon move decision",
+      "remote travel decision",
+      "career change decision",
+    ]);
+    expect(result.context.simulations.every(({ paths }) => paths.length === 1)).toBe(true);
+    expect(result.nextAction).toContain("without asking the user to name memories or simulations");
+    expect(mocks.recallBroadMemoryForUser).toHaveBeenCalledWith(
+      "alpha",
+      LIFE_COACH_MEMORY_MAX_RECORDS,
+      LIFE_COACH_BROAD_MEMORY_MAX_TOKENS
+    );
+    expect(mocks.recallMemoryForUser).not.toHaveBeenCalled();
+  });
+
+  it("keeps broad simulation overviews compact and bounded", () => {
+    const simulations = Array.from({ length: 20 }, (_, index) =>
+      completedSimulation(
+        `sim-${index}`,
+        `topic ${index} ${"detail ".repeat(500)}`,
+        new Date(Date.UTC(2026, 0, index + 1)).toISOString()
+      )
+    );
+
+    const selected = selectBroadCompletedSimulations(simulations);
+
+    expect(selected.length).toBeLessThanOrEqual(12);
+    expect(selected[0].paths).toHaveLength(1);
+    expect(JSON.stringify(selected)).not.toContain("sim-19-path-");
+  });
+
+  it("enforces the total token budget for a large one-line coaching overview", async () => {
+    mocks.recallBroadMemoryForUser.mockResolvedValueOnce({
+      kind: "ready",
+      memory: `<memory_record>${"memory ".repeat(20_000)}</memory_record>`,
+      recordsUsed: 20,
+    });
+    mocks.listCompletedSimulationsForUser.mockResolvedValueOnce(
+      Array.from({ length: 20 }, (_, index) =>
+        completedSimulation(
+          `sim-${index}`,
+          `topic ${index} ${"detail ".repeat(500)}`,
+          new Date(Date.UTC(2026, 0, index + 1)).toISOString()
+        )
+      )
+    );
+
+    const result = await buildLifeCoachContextForUser("alpha", "Use Mora as my life coach");
+
+    expect(result.mode).toBe("overview");
+    expect(result.context.simulations.length).toBeGreaterThan(0);
+    expect(Math.ceil(JSON.stringify(result).length / 4)).toBeLessThanOrEqual(
+      LIFE_COACH_CONTEXT_MAX_TOKENS
+    );
   });
 
   it("labels retrieved text as untrusted and keeps the full result within its token budget", async () => {
