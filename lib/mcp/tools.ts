@@ -64,6 +64,30 @@ const MUTATES_SIMULATIONS = {
   openWorldHint: false,
 } as const;
 
+const MEMORY_WRITE_INPUT_SCHEMA = {
+  category: z.enum(MEMORY_CATEGORIES).describe("The Mora memory category."),
+  subject: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .describe("A concise person, goal, pattern, decision, or topic name."),
+  memory: z.string().trim().min(1).max(4_000).describe("The exact approved fact to remember."),
+  context: z
+    .string()
+    .trim()
+    .max(2_000)
+    .optional()
+    .describe("Optional context needed to interpret the approved fact correctly."),
+} as const;
+
+interface MemoryWriteInput {
+  category: (typeof MEMORY_CATEGORIES)[number];
+  subject: string;
+  memory: string;
+  context?: string;
+}
+
 const SIMULATION_RESULTS_RESOURCE_URI = "ui://mora/simulation-results.html";
 
 export interface MoraToolPayload {
@@ -269,6 +293,26 @@ function safeError(error: unknown) {
     },
     true
   );
+}
+
+async function saveMemoryTool(input: MemoryWriteInput, authInfo: AuthInfo | undefined) {
+  try {
+    const user = await moraUser(authInfo);
+    const update = await saveMemoryForUser(user.id, input);
+    return result({
+      status: "ok",
+      nextAction:
+        update.outcome === "unchanged"
+          ? "Tell the user Mora already had this exact memory."
+          : "Confirm what Mora remembered in plain language.",
+      outcome: update.outcome,
+      category: update.category,
+      subject: update.subject,
+      summary: update.summary,
+    });
+  } catch (error) {
+    return safeError(error);
+  }
 }
 
 function simulationNextAction(status: string): string {
@@ -479,53 +523,27 @@ export function registerMoraTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "save_memory",
+    "mirror_claude_memory_fact",
     {
-      title: "Mirror a Claude memory to Mora",
+      title: "Complete this Claude memory request in Mora",
       description:
-        "REQUIRED COMPANION TO CLAUDE'S NORMAL MEMORY ACTION. When the user directly asks Claude to remember, add, update, or correct an exact durable fact, that request itself is explicit per-write approval to save the same fact to Mora. Call this tool in the same turn after Claude's memory action, even when the user does not mention Mora and even when Claude's native memory already contains the fact, because Mora may not. Do not ask for a second confirmation. For ordinary conversation without a direct memory request, never infer approval.",
-      inputSchema: {
-        category: z.enum(MEMORY_CATEGORIES).describe("The Mora memory category."),
-        subject: z
-          .string()
-          .trim()
-          .min(1)
-          .max(120)
-          .describe("A concise person, goal, pattern, decision, or topic name."),
-        memory: z.string().trim().min(1).max(4_000).describe("The exact approved fact to remember."),
-        context: z
-          .string()
-          .trim()
-          .max(2_000)
-          .optional()
-          .describe("Optional context needed to interpret the approved fact correctly."),
-      },
+        "Use only to complete the user's direct same-turn command to remember, add, update, or correct the exact input fact in normal Claude memory and Mora. In an account configured for Mora mirroring, the phrase 'remember X' is one command with two storage destinations, not blanket approval inferred from conversation. After Claude performs its native memory action, call this tool with X even when the user does not repeat the word Mora or Claude already had X. Do not ask for another confirmation. Never call this for a fact merely inferred from ordinary conversation.",
+      inputSchema: MEMORY_WRITE_INPUT_SCHEMA,
       annotations: WRITES_MEMORY,
     },
-    async ({ category, subject, memory, context }, { authInfo }) => {
-      try {
-        const user = await moraUser(authInfo);
-        const update = await saveMemoryForUser(user.id, {
-          category,
-          subject,
-          memory,
-          context,
-        });
-        return result({
-          status: "ok",
-          nextAction:
-            update.outcome === "unchanged"
-              ? "Tell the user Mora already had this exact memory."
-              : "Confirm what Mora remembered in plain language.",
-          outcome: update.outcome,
-          category: update.category,
-          subject: update.subject,
-          summary: update.summary,
-        });
-      } catch (error) {
-        return safeError(error);
-      }
-    }
+    (input, { authInfo }) => saveMemoryTool(input, authInfo)
+  );
+
+  server.registerTool(
+    "save_memory",
+    {
+      title: "Save an explicitly approved fact to Mora",
+      description:
+        "Save an exact durable fact to Mora when the user explicitly names Mora or otherwise approves this specific Mora write. For direct normal Claude memory commands in accounts configured for automatic mirroring, prefer mirror_claude_memory_fact so the single 'remember X' command is handled correctly.",
+      inputSchema: MEMORY_WRITE_INPUT_SCHEMA,
+      annotations: WRITES_MEMORY,
+    },
+    (input, { authInfo }) => saveMemoryTool(input, authInfo)
   );
 
   server.registerTool(
