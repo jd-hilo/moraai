@@ -5,9 +5,8 @@ import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-promp
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
 import { ScrollToSetup } from "@/components/connect/scroll-to-setup";
+import { CLAUDE_CONNECTOR_URL } from "@/lib/claude/connector";
 import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
-
-const PRODUCTION_MCP_ENDPOINT = "https://www.mymora.app/mcp";
 
 export const metadata: Metadata = {
   title: "Mora for Claude — Add the MCP connector",
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default function ConnectClaudePage() {
-  const endpoint = PRODUCTION_MCP_ENDPOINT;
+  const endpoint = CLAUDE_CONNECTOR_URL;
   const accountHref = "/sign-up?source=claude";
 
   return (
@@ -33,9 +32,12 @@ export default function ConnectClaudePage() {
           />
         </Link>
         <div className="flex items-center gap-2">
-          <span className="hidden rounded-full border border-[#8f85df]/20 bg-white/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#6f6bc9] sm:inline-flex">
-            MCP connector
-          </span>
+          <Link
+            href="/sign-in?source=claude"
+            className="hidden rounded-full px-3 py-2.5 text-sm font-semibold text-[#514f59] transition-colors hover:text-[#6f6bc9] sm:inline-flex"
+          >
+            Sign in
+          </Link>
           <Link
             href={accountHref}
             className="rounded-full bg-[#17171a] px-5 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#303036] active:scale-[0.98]"
@@ -152,7 +154,32 @@ export default function ConnectClaudePage() {
             </div>
           </ScrollReveal>
 
-          <div className="mt-14 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <ScrollReveal delay={80}>
+            <div className="mx-auto mt-10 grid max-w-4xl gap-4 rounded-[1.75rem] border border-[#8f85df]/18 bg-[#faf9ff] p-5 text-left shadow-[0_18px_45px_-42px_rgba(79,65,151,0.45)] md:grid-cols-[1.05fr_0.95fr] md:p-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6f6bc9]">
+                  Exact connector URL
+                </p>
+                <div className="mt-3 flex min-w-0 items-center gap-2 rounded-xl border border-[#17171a]/10 bg-white p-2 pl-3">
+                  <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-[#514f59] sm:text-sm">
+                    {endpoint}
+                  </code>
+                  <CopyEndpoint endpoint={endpoint} compact />
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#17171a]/8 bg-white/75 p-4">
+                <p className="text-sm font-semibold text-[#242329]">What to expect</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#706e78]">
+                  Claude opens Mora for authorization. Sign in or create an
+                  account if asked, review the request, then approve it. If Mora
+                  recognizes an existing signed-in session, you may go straight
+                  to the approval screen.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <ScrollReveal className="h-full" delay={0}>
               <article>
               <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
@@ -199,7 +226,7 @@ export default function ConnectClaudePage() {
                   Open Claude.
                 </h3>
                 <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
-                  Go to Settings, choose Connectors, then select Add custom
+                  In Claude, open Customize → Connectors → + → Add custom
                   connector.
                 </p>
               </div>
@@ -227,7 +254,7 @@ export default function ConnectClaudePage() {
                   Add the Mora URL.
                 </h3>
                 <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
-                  Name the connector Mora, paste the URL, and choose Add.
+                  Name it Mora, paste {endpoint}, then choose Add.
                 </p>
               </div>
               </article>
@@ -263,10 +290,11 @@ export default function ConnectClaudePage() {
               <div className="pt-7">
                 <span className="font-mono text-xs text-[#9a98a5]">03</span>
                 <h3 className="mt-4 font-[Recoleta] text-2xl font-normal tracking-[-0.03em]">
-                  Sign in with Mora.
+                  Authorize Mora.
                 </h3>
                 <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
-                  Sign in, review the access request, and approve the connection.
+                  Sign in or create an account if asked. Review the access
+                  request, then approve the connection.
                 </p>
               </div>
               </article>
@@ -290,12 +318,12 @@ export default function ConnectClaudePage() {
                 <div className="pt-7">
                   <span className="font-mono text-xs text-[#9a98a5]">04</span>
                   <h3 className="mt-4 font-[Recoleta] text-2xl font-normal tracking-[-0.03em]">
-                    Type “Enroll me.”
+                    Send the first prompt.
                   </h3>
                   <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
-                    Send the message above in a new Claude chat. No slash command
-                    is required. Claude will use only context it can access and
-                    tell you what was saved.
+                    In a new Claude chat, enable Mora under + → Connectors if
+                    needed, then paste the exact “Enroll me” message above.
+                    Claude will tell you what was saved.
                   </p>
                 </div>
               </article>
@@ -386,10 +414,10 @@ export default function ConnectClaudePage() {
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <CopyEnrollmentPrompt />
                 <Link
-                  href="/onboarding?source=claude"
+                  href="/sign-up"
                   className="rounded-full border border-[#17171a]/15 bg-white px-6 py-3 text-sm font-semibold text-[#242329] transition duration-300 hover:border-[#8f85df]/30 hover:text-[#6f6bc9] active:scale-[0.98]"
                 >
-                  Import history instead
+                  Start with a history import
                 </Link>
               </div>
             </div>

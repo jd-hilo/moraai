@@ -4,9 +4,8 @@ import Link from "next/link";
 import { CopyEnrollmentPrompt } from "@/components/connect/copy-enrollment-prompt";
 import { CopyEndpoint } from "@/components/connect/copy-endpoint";
 import { ScrollReveal } from "@/components/connect/scroll-reveal";
+import { CLAUDE_CONNECTOR_URL } from "@/lib/claude/connector";
 import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
-
-const MCP_ENDPOINT = "https://www.mymora.app/mcp";
 
 export const metadata: Metadata = {
   title: "Mora for Claude",
@@ -272,8 +271,8 @@ export default function ClaudeLandingPage() {
                     Open Claude.
                   </h3>
                   <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-[#7b7a8b]">
-                    Go to Settings, choose Connectors, then select Add custom
-                    connector.
+                    Go to Customize → Connectors, choose +, then select Add
+                    custom connector.
                   </p>
                 </div>
               </article>
@@ -288,9 +287,9 @@ export default function ClaudeLandingPage() {
                     </p>
                     <div className="flex items-center gap-3 rounded-xl border border-[#17171a]/10 bg-[#fafafa] p-2 pl-3">
                       <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-[#514f59]">
-                        {MCP_ENDPOINT}
+                        {CLAUDE_CONNECTOR_URL}
                       </code>
-                      <CopyEndpoint endpoint={MCP_ENDPOINT} compact />
+                      <CopyEndpoint endpoint={CLAUDE_CONNECTOR_URL} compact />
                     </div>
                   </div>
                 </div>
