@@ -75,10 +75,8 @@ function setReadingVisibility(visible: boolean) {
   synthesisPanel.hidden = !visible || !hasSynthesis;
   synthesisToggle.setAttribute("aria-expanded", String(visible));
   const isFullscreen = document.documentElement.dataset.displayMode === "fullscreen";
-  synthesisToggle.hidden = isFullscreen && !hasSynthesis;
-  synthesisToggle.textContent = isFullscreen
-    ? visible ? "Hide Mora synthesis" : "View Mora synthesis"
-    : visible ? "Show less" : "Read full path";
+  synthesisToggle.hidden = isFullscreen;
+  synthesisToggle.textContent = visible ? "Show less" : "Read full path";
 }
 
 function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
@@ -86,11 +84,7 @@ function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
   document.documentElement.dataset.displayMode = readingMode;
   displayModeToggle.hidden = readingMode !== "fullscreen";
 
-  if (readingMode === "inline") {
-    setReadingVisibility(false);
-  } else {
-    setReadingVisibility(readingExpanded);
-  }
+  setReadingVisibility(readingMode === "fullscreen");
 }
 
 async function openSimulationInMora(): Promise<boolean> {
@@ -229,7 +223,7 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
 function renderReport(result: SimulationResult) {
   synthesisElement.replaceChildren();
   hasSynthesis = result.report !== null;
-  setReadingVisibility(false);
+  setReadingVisibility(document.documentElement.dataset.displayMode === "fullscreen");
   if (!result.report) {
     return;
   }

@@ -250,10 +250,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v2.html",
+        resourceUri: "ui://mora/simulation-results-v3.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v2.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v3.html",
     });
   });
 
@@ -269,6 +269,8 @@ describe("MCP tool surface", () => {
     );
     expect(script).toContain("actions.append(synthesisToggle);");
     expect(script).not.toContain("const readButton");
+    expect(script).not.toContain("View Mora synthesis");
+    expect(script).not.toContain("Hide Mora synthesis");
   });
 
   it("continues an accidental status check into coaching instead of a tool tour", async () => {
