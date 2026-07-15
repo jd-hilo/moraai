@@ -422,9 +422,18 @@ export default function ConnectClaudePage() {
             <div className="rounded-[1.75rem] border border-[#6f6bc9]/15 bg-white p-5 shadow-[0_24px_65px_-50px_rgba(79,65,151,0.55)] md:p-7">
               <ol className="grid gap-4 text-sm text-[#514f59] md:grid-cols-3">
                 {[
-                  ["01", "Open Claude Cowork → Scheduled and create a new task."],
-                  ["02", "Paste the task below, choose Daily, and keep Mora connected."],
-                  ["03", "Run it once now. Claude should report updated or already current."],
+                  [
+                    "01",
+                    "Open Customize → Connectors → Mora, then refresh the tools list.",
+                  ],
+                  [
+                    "02",
+                    "Set “Sync Claude memory to Mora” to Always allow so remote runs do not pause.",
+                  ],
+                  [
+                    "03",
+                    "In Cowork → Scheduled, create a Daily task with the prompt below and run it once.",
+                  ],
                 ].map(([number, instruction]) => (
                   <li key={number} className="rounded-2xl bg-[#f8f7fc] p-4 leading-relaxed">
                     <span className="font-mono text-xs text-[#7b73cf]">{number}</span>

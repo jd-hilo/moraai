@@ -113,11 +113,13 @@ simulations first.
 Claude does not currently expose a memory-change webhook or an API that Mora
 can poll. Users can explicitly request a Mora snapshot sync or configure an
 approved recurring Claude Cowork task to push one snapshot through the
-authenticated connector each night. Scheduled tasks are a Claude beta feature
-on paid plans, so the setup page also supports pasting the same task into a
-normal Mora-enabled chat for a manual end-to-end test. Ordinary Claude memory
-requests do not write to Mora. Identical snapshots and exact memories are
-skipped idempotently.
+authenticated connector each night. Remote scheduled runs also require the
+`Sync Claude memory to Mora` connector tool to be set to **Always allow** in
+Claude; existing connector installs may need to refresh their tools list first.
+Scheduled tasks are a Claude beta feature on paid plans, so the setup page also
+supports pasting the same task into a normal Mora-enabled chat for a manual
+end-to-end test. Ordinary Claude memory requests do not write to Mora. Identical
+snapshots and exact memories are skipped idempotently.
 
 ---
 
