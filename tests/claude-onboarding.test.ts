@@ -17,8 +17,11 @@ describe("Claude connector onboarding prompt", () => {
   it("provides an account-wide instruction for implicit remember requests", () => {
     expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("normal Claude memory");
     expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("enabled Mora connector");
-    expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("even when I do not mention Mora");
-    expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("direct memory request is approval");
+    expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain(
+      "even when I do not repeat the word Mora"
+    );
+    expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("one direct command");
+    expect(CLAUDE_MEMORY_MIRROR_INSTRUCTION).toContain("mirror_claude_memory_fact");
   });
 
   it("uses the canonical HTTPS connector endpoint", () => {
