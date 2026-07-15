@@ -1,42 +1,28 @@
 import Link from "next/link";
 import { NewSimulationForm } from "@/components/skills/simulations/new-simulation-form";
+import styles from "@/components/skills/simulations/simulations.module.css";
 
 export default function NewSimulationPage() {
   return (
-    <div
-      style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: "48px 24px 80px",
-        width: "100%",
-      }}
-    >
-      <Link
-        href="/skills/simulations"
-        style={{
-          fontSize: 13,
-          color: "#6e6e80",
-          textDecoration: "none",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          marginBottom: 16,
-        }}
-      >
-        ← All simulations
-      </Link>
+    <div className={`${styles.page} ${styles.pageNarrow}`}>
+      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <Link className={styles.breadcrumbLink} href="/skills/simulations">
+          Simulations
+        </Link>
+        <span className={styles.breadcrumbSeparator} aria-hidden="true">/</span>
+        <span aria-current="page">New</span>
+      </nav>
 
-      <h1
-        style={{
-          fontSize: 28,
-          fontWeight: 600,
-          color: "#0d0d0d",
-          margin: 0,
-          marginBottom: 28,
-        }}
-      >
-        New simulation
-      </h1>
+      <header className={styles.pageHeader}>
+        <div>
+          <p className={styles.eyebrow}>New simulation</p>
+          <h1 className={styles.title}>What future do you want to examine?</h1>
+          <p className={styles.description}>
+            Name one concrete choice or change. Mora will build ten distinct paths
+            and compare how each could unfold over time.
+          </p>
+        </div>
+      </header>
 
       <NewSimulationForm />
     </div>

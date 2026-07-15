@@ -1,165 +1,157 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import type {
   SimulationStatus,
   SimulationSummary,
 } from "@/lib/skills/simulations/types";
+import styles from "./simulations.module.css";
 
 export function SimulationsList() {
-  const [sims, setSims] = useState<SimulationSummary[] | null>(null);
+  const [simulations, setSimulations] = useState<SimulationSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [requestKey, setRequestKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/skills/simulations")
-      .then((r) => {
-        if (!r.ok) throw new Error(`${r.status}`);
-        return r.json();
-      })
-      .then((d) => {
-        if (cancelled) return;
-        setSims(d.simulations ?? []);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setError(String(e));
-      });
-    return () => {
-      cancelled = true;
-    };
+  const loadSimulations = useCallback(async (signal: AbortSignal) => {
+    setError(null);
+    try {
+      const response = await fetch("/api/skills/simulations", { signal });
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      const data = await response.json();
+      setSimulations(data.simulations ?? []);
+    } catch (reason) {
+      if (signal.aborted) return;
+      setError(reason instanceof Error ? reason.message : "Something went wrong");
+    }
   }, []);
 
-  if (error) {
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadSimulations(controller.signal);
+    return () => controller.abort();
+  }, [loadSimulations, requestKey]);
+
+  if (error && simulations === null) {
     return (
-      <div style={{ color: "#991b1b", fontSize: 14 }}>
-        Couldn&apos;t load simulations ({error})
+      <div className={`${styles.statePanel} ${styles.errorPanel}`} role="alert">
+        <span className={styles.stateMark} aria-hidden="true"><AlertIcon /></span>
+        <div>
+          <h2 className={styles.stateTitle}>Simulations could not be loaded</h2>
+          <p className={styles.stateCopy}>{error}. Check your connection and try again.</p>
+        </div>
+        <button className={styles.retryButton} type="button" onClick={() => setRequestKey((key) => key + 1)}>
+          Try again
+        </button>
       </div>
     );
   }
 
-  if (sims === null) {
-    return <div style={{ color: "#6e6e80", fontSize: 14 }}>Loading…</div>;
-  }
+  if (simulations === null) return <SimulationListSkeleton />;
 
-  if (sims.length === 0) {
+  if (simulations.length === 0) {
     return (
-      <div
-        style={{
-          padding: 48,
-          textAlign: "center",
-          border: "1px dashed #e5e5e5",
-          borderRadius: 16,
-          backgroundColor: "#fafafa",
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 500, color: "#0d0d0d", marginBottom: 6 }}>
-          No simulations yet
+      <section className={styles.statePanel} aria-labelledby="empty-simulations-title">
+        <span className={styles.stateMark} aria-hidden="true"><PathsIcon /></span>
+        <div>
+          <h2 id="empty-simulations-title" className={styles.stateTitle}>Your first paths start here</h2>
+          <p className={styles.stateCopy}>
+            Bring Mora a decision you are circling, a move you are considering,
+            or a change you want to pressure-test.
+          </p>
         </div>
-        <div style={{ fontSize: 14, color: "#6e6e80", marginBottom: 20 }}>
-          Describe a what-if scenario and Mora will run it through 10 lenses
-          drawn from your life.
-        </div>
-        <Link href="/skills/simulations/new" style={{ textDecoration: "none" }}>
-          <Button variant="primary">New simulation</Button>
-        </Link>
-      </div>
+        <Link className={styles.secondaryAction} href="/skills/simulations/new">Start a simulation</Link>
+      </section>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {sims.map((s) => (
-        <Link
-          key={s.id}
-          href={`/skills/simulations/${s.id}`}
-          style={{
-            textDecoration: "none",
-            color: "inherit",
-            display: "block",
-            padding: "16px 18px",
-            borderRadius: 12,
-            border: "1px solid #e5e5e5",
-            backgroundColor: "#fff",
-            transition: "background-color 0.15s, border-color 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "#fafafa";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "#fff";
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              marginBottom: 4,
-            }}
-          >
-            <div style={{ fontSize: 15, fontWeight: 500, color: "#0d0d0d", flex: 1, minWidth: 0 }}>
-              {s.title}
-            </div>
-            <StatusPill status={s.status} />
+    <section aria-labelledby="simulation-history-title">
+      <div className={styles.sectionHeader}>
+        <h2 id="simulation-history-title" className={styles.sectionTitle}>Your simulations</h2>
+        <span className={styles.sectionMeta}>{simulations.length} total</span>
+      </div>
+      {error && (
+        <p className={styles.inlineError} role="status">
+          This list may be out of date. Mora will try to reconnect when you open a simulation.
+        </p>
+      )}
+      <ul className={styles.simulationList}>
+        {simulations.map((simulation) => (
+          <li className={styles.simulationItem} key={simulation.id}>
+            <Link className={styles.simulationLink} href={`/skills/simulations/${simulation.id}`}>
+              <div>
+                <div className={styles.simulationTitleRow}>
+                  <span className={styles.simulationTitle}>{simulation.title}</span>
+                  <StatusBadge status={simulation.status} />
+                </div>
+                <p className={styles.simulationScenario}>{simulation.scenario}</p>
+              </div>
+              <div className={styles.simulationMeta}>
+                <span>{formatHorizon(simulation.timeHorizonYears)}</span>
+                <span aria-hidden="true">·</span>
+                <time dateTime={simulation.createdAt}>
+                  {new Date(simulation.createdAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: new Date(simulation.createdAt).getFullYear() === new Date().getFullYear() ? undefined : "numeric",
+                  })}
+                </time>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SimulationListSkeleton() {
+  return (
+    <div className={styles.skeletonList} aria-busy="true" aria-label="Loading simulations">
+      {[0, 1, 2].map((row) => (
+        <div className={styles.skeletonRow} key={row}>
+          <div className={styles.skeletonLines}>
+            <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+            <span className={styles.skeletonLine} />
           </div>
-          <div
-            style={{
-              fontSize: 13,
-              color: "#6e6e80",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {s.scenario}
-          </div>
-          <div
-            style={{
-              fontSize: 12,
-              color: "#9ca3af",
-              marginTop: 6,
-            }}
-          >
-            {s.timeHorizonYears} year{s.timeHorizonYears === 1 ? "" : "s"} •{" "}
-            {new Date(s.createdAt).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            })}
-          </div>
-        </Link>
+          <span className={`${styles.skeletonLine} ${styles.skeletonMeta}`} />
+        </div>
       ))}
     </div>
   );
 }
 
-function StatusPill({ status }: { status: SimulationStatus }) {
-  const map: Record<SimulationStatus, { label: string; bg: string; fg: string }> = {
-    pending: { label: "Pending", bg: "#f3f4f6", fg: "#6b7280" },
-    generating_lenses: { label: "Identifying lenses", bg: "#fef3c7", fg: "#92400e" },
-    ready_to_run: { label: "Ready", bg: "#dbeafe", fg: "#1e40af" },
-    running: { label: "Running", bg: "#fef3c7", fg: "#92400e" },
-    generating_report: { label: "Synthesizing", bg: "#fef3c7", fg: "#92400e" },
-    complete: { label: "Complete", bg: "#dcfce7", fg: "#166534" },
-    failed: { label: "Failed", bg: "#fee2e2", fg: "#991b1b" },
+function StatusBadge({ status }: { status: SimulationStatus }) {
+  const statuses: Record<SimulationStatus, { label: string; className: string }> = {
+    pending: { label: "Pending", className: styles.statusNeutral },
+    generating_lenses: { label: "Finding paths", className: styles.statusPending },
+    ready_to_run: { label: "Ready", className: styles.statusAccent },
+    running: { label: "Running", className: styles.statusPending },
+    generating_report: { label: "Synthesizing", className: styles.statusPending },
+    complete: { label: "Complete", className: styles.statusSuccess },
+    failed: { label: "Needs attention", className: styles.statusError },
   };
-  const s = map[status] ?? map.pending;
+  const value = statuses[status] ?? statuses.pending;
+  return <span className={`${styles.statusBadge} ${value.className}`}>{value.label}</span>;
+}
+
+function formatHorizon(years: number) {
+  return `${years}-year horizon`;
+}
+
+function AlertIcon() {
   return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 500,
-        padding: "3px 8px",
-        borderRadius: 12,
-        backgroundColor: s.bg,
-        color: s.fg,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {s.label}
-    </span>
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+      <path d="M8.5 5v4M8.5 12.2v.1M8.5 15.2a6.7 6.7 0 1 0 0-13.4 6.7 6.7 0 0 0 0 13.4Z" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PathsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M3 3.2v3.1c0 1.5 1.2 2.7 2.7 2.7h6.6M8.9 5.7 12.3 9l-3.4 3.3M3 14.8v-2.2" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

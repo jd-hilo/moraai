@@ -1,4 +1,5 @@
 import { SimulationDashboard } from "@/components/skills/simulations/simulation-dashboard";
+import styles from "@/components/skills/simulations/simulations.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -10,14 +11,7 @@ export default async function SimulationDetailPage({
   const { id } = await params;
 
   return (
-    <div
-      style={{
-        maxWidth: 1080,
-        margin: "0 auto",
-        padding: "48px 24px 80px",
-        width: "100%",
-      }}
-    >
+    <div className={styles.page}>
       <SimulationDashboard simulationId={id} />
     </div>
   );

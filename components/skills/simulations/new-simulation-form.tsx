@@ -1,24 +1,25 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./simulations.module.css";
 
 const HORIZONS = [1, 3, 5, 10] as const;
 const EXAMPLES = [
-  "I quit my job to work on my startup full-time",
+  "I leave my job to work on my company full-time",
   "I move to a new city",
   "I ask for a promotion",
-  "I end my current relationship",
   "I go back to school",
 ];
 
 export function NewSimulationForm() {
   const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [scenario, setScenario] = useState("");
   const [years, setYears] = useState<number>(5);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const canSubmit = scenario.trim().length > 0 && !submitting;
 
@@ -26,169 +27,124 @@ export function NewSimulationForm() {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+
     try {
-      const res = await fetch("/api/skills/simulations", {
+      const response = await fetch("/api/skills/simulations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario: scenario.trim(), timeHorizonYears: years }),
       });
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b?.error || `Error ${res.status}`);
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body?.error || `Mora could not create this simulation (${response.status})`);
       }
-      const data = await res.json();
-      if (!data?.id) throw new Error("No id returned");
+      const data = await response.json();
+      if (!data?.id) throw new Error("Mora created the simulation but did not return its location");
       router.push(`/skills/simulations/${data.id}`);
-    } catch (err) {
-      setError((err as Error).message);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Something went wrong");
       setSubmitting(false);
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      submit();
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      void submit();
     }
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
-      {/* Scenario input */}
-      <div style={inputWrap}>
+    <form className={styles.form} onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+      <div className={styles.fieldGroup}>
+        <label className={styles.label} htmlFor="simulation-scenario">Scenario</label>
+        <p className={styles.helper} id="simulation-scenario-help">
+          Write it as a choice you could make. Specific scenarios lead to more useful paths.
+        </p>
         <textarea
           ref={textareaRef}
+          id="simulation-scenario"
+          className={styles.textarea}
           value={scenario}
-          onChange={(e) => setScenario(e.target.value)}
+          onChange={(event) => setScenario(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="What would you like to simulate? e.g. I quit my job to do my startup full-time"
-          rows={3}
+          placeholder="For example: I leave my current role and build my company full-time."
+          rows={5}
+          aria-describedby="simulation-scenario-help"
+          aria-invalid={Boolean(error)}
           autoFocus
-          style={textarea}
+          required
         />
-
-        {/* Example chips — visible only when empty */}
-        {scenario.length === 0 && (
-          <div style={{ padding: "0 14px 12px", display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {EXAMPLES.map((ex) => (
+        {!scenario && (
+          <div className={styles.suggestions} aria-label="Scenario examples">
+            {EXAMPLES.map((example) => (
               <button
-                key={ex}
+                className={styles.suggestion}
+                key={example}
                 type="button"
-                onClick={() => { setScenario(ex); textareaRef.current?.focus(); }}
-                style={exampleChip}
+                onClick={() => {
+                  setScenario(example);
+                  textareaRef.current?.focus();
+                }}
               >
-                {ex}
+                {example}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Time horizon + submit on the same row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        {HORIZONS.map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => setYears(y)}
-            style={{
-              ...horizonBtn,
-              backgroundColor: y === years ? "#0d0d0d" : "#fff",
-              color: y === years ? "#fff" : "#0d0d0d",
-              borderColor: y === years ? "#0d0d0d" : "#e5e7eb",
-            }}
-          >
-            {y}y
-          </button>
-        ))}
-
-        <div style={{ flex: 1 }} />
-
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!canSubmit}
-          style={{
-            ...runBtn,
-            opacity: canSubmit ? 1 : 0.45,
-            cursor: canSubmit ? "pointer" : "not-allowed",
-          }}
-        >
-          {submitting ? "Creating…" : "Run →"}
-        </button>
-      </div>
-
-      {/* Hint */}
-      <div style={{ fontSize: 11, color: "#9ca3af" }}>
-        ⌘ + Enter to run · Mora generates 10 possibilities automatically
-      </div>
+      <fieldset className={styles.fieldGroup}>
+        <legend className={styles.label}>Time horizon</legend>
+        <p className={styles.helper}>How far ahead should Mora follow each path?</p>
+        <div className={styles.horizonGroup}>
+          {HORIZONS.map((horizon) => (
+            <button
+              className={`${styles.horizonButton} ${horizon === years ? styles.horizonSelected : ""}`}
+              key={horizon}
+              type="button"
+              aria-pressed={horizon === years}
+              onClick={() => setYears(horizon)}
+            >
+              {horizon} {horizon === 1 ? "year" : "years"}
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       {error && (
-        <div style={{ padding: "10px 14px", borderRadius: 6, background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", fontSize: 13 }}>
-          {error}
+        <div className={styles.inlineError} role="alert">
+          <AlertIcon />
+          <span>{error}. Your scenario is still here, so you can try again.</span>
         </div>
       )}
-    </div>
+
+      <div className={styles.formFooter}>
+        <span className={styles.keyboardHint}>Command or Control + Enter to run</span>
+        <button className={styles.primaryAction} type="submit" disabled={!canSubmit}>
+          {submitting ? (
+            <><span className={styles.spinner} aria-hidden="true" />Creating simulation</>
+          ) : (
+            <>Build ten paths <ArrowIcon /></>
+          )}
+        </button>
+      </div>
+    </form>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const inputWrap: React.CSSProperties = {
-  borderRadius: 10,
-  border: "1px solid #e5e7eb",
-  backgroundColor: "#fff",
-  overflow: "hidden",
-  transition: "border-color 0.15s",
-};
+function AlertIcon() {
+  return (
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 4.7v3.8M8 11.2v.1M8 14.2A6.2 6.2 0 1 0 8 1.8a6.2 6.2 0 0 0 0 12.4Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
 
-const textarea: React.CSSProperties = {
-  width: "100%",
-  padding: "14px 16px 10px",
-  border: "none",
-  outline: "none",
-  fontSize: 15,
-  lineHeight: 1.6,
-  fontFamily: "'DM Sans', sans-serif",
-  color: "#0d0d0d",
-  backgroundColor: "transparent",
-  resize: "none",
-  boxSizing: "border-box",
-};
-
-const exampleChip: React.CSSProperties = {
-  fontSize: 11,
-  color: "#6b7280",
-  backgroundColor: "#f9fafb",
-  border: "1px solid #e5e7eb",
-  borderRadius: 20,
-  padding: "3px 10px",
-  cursor: "pointer",
-  fontFamily: "'DM Sans', sans-serif",
-  transition: "background-color 0.12s, color 0.12s",
-  whiteSpace: "nowrap",
-};
-
-const horizonBtn: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  padding: "7px 14px",
-  borderRadius: 20,
-  border: "1px solid",
-  cursor: "pointer",
-  fontFamily: "'DM Sans', sans-serif",
-  transition: "all 0.12s",
-  letterSpacing: "0.02em",
-};
-
-const runBtn: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  padding: "9px 22px",
-  borderRadius: 20,
-  border: "none",
-  backgroundColor: "#0d0d0d",
-  color: "#fff",
-  fontFamily: "'DM Sans', sans-serif",
-  transition: "opacity 0.15s",
-  letterSpacing: "0.01em",
-};
+function ArrowIcon() {
+  return (
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2.5 7h9M8 3.5 11.5 7 8 10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

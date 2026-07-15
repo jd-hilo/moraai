@@ -1,52 +1,42 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { SimulationsList } from "@/components/skills/simulations/simulations-list";
+import styles from "@/components/skills/simulations/simulations.module.css";
 
 export const dynamic = "force-dynamic";
 
 export default function SimulationsPage() {
   return (
-    <div
-      style={{
-        maxWidth: 880,
-        margin: "0 auto",
-        padding: "48px 24px 80px",
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          gap: 16,
-          marginBottom: 32,
-          flexWrap: "wrap",
-        }}
-      >
+    <div className={styles.page}>
+      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <span>Skills</span>
+        <span className={styles.breadcrumbSeparator} aria-hidden="true">/</span>
+        <span aria-current="page">Simulations</span>
+      </nav>
+
+      <header className={styles.pageHeader}>
         <div>
-          <h1
-            style={{
-              fontSize: 28,
-              fontWeight: 600,
-              color: "#0d0d0d",
-              margin: 0,
-              marginBottom: 6,
-            }}
-          >
-            Simulations
-          </h1>
-          <div style={{ fontSize: 14, color: "#6e6e80", lineHeight: 1.5 }}>
-            Play out a scenario through 10 lenses drawn from your life — and get
-            an in-depth report.
-          </div>
+          <p className={styles.eyebrow}>Future paths</p>
+          <h1 className={styles.title}>See a decision from ten directions.</h1>
+          <p className={styles.description}>
+            Mora draws on what it knows about you to explore ten plausible paths,
+            then brings the patterns, risks, and likely outcomes into one report.
+          </p>
         </div>
-        <Link href="/skills/simulations/new" style={{ textDecoration: "none" }}>
-          <Button variant="primary">New simulation</Button>
+        <Link className={styles.primaryAction} href="/skills/simulations/new">
+          New simulation
+          <ArrowIcon />
         </Link>
-      </div>
+      </header>
 
       <SimulationsList />
     </div>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2.5 7h9M8 3.5 11.5 7 8 10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
