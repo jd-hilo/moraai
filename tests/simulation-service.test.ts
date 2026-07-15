@@ -54,6 +54,7 @@ vi.mock("@/lib/pipelines/simulations/run-lens-simulation", () => ({
 import {
   createSimulationForUser,
   getSimulationForUser,
+  listCompletedSimulationsForUser,
   listSimulationsForUser,
   runSimulationForUser,
   simulateFutureForUser,
@@ -126,6 +127,19 @@ describe("simulation service", () => {
     expect(mocks.prisma.simulation.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "beta" } })
     );
+  });
+
+  it("queries completed coaching simulations by owner and completion state", async () => {
+    mocks.prisma.simulation.findMany.mockResolvedValueOnce([simulation("alpha")]);
+
+    const completed = await listCompletedSimulationsForUser("alpha", 12);
+
+    expect(completed[0].scenario).toContain("alpha");
+    expect(mocks.prisma.simulation.findMany).toHaveBeenCalledWith({
+      where: { userId: "alpha", status: "complete" },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+    });
   });
 
   it("rejects an invalid time horizon before creating data", async () => {

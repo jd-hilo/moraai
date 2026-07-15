@@ -119,6 +119,23 @@ export async function listSimulationsForUser(userId: string): Promise<Simulation
   }));
 }
 
+/**
+ * Return recent completed simulations as user-safe DTOs for server-side
+ * personalized context assembly. Ownership is enforced in the query rather
+ * than by filtering a broader result in application code.
+ */
+export async function listCompletedSimulationsForUser(
+  userId: string,
+  take = 20
+): Promise<SimulationDetail[]> {
+  const simulations = await prisma.simulation.findMany({
+    where: { userId, status: "complete" },
+    orderBy: { updatedAt: "desc" },
+    take,
+  });
+  return simulations.map((simulation) => toDetail(simulation));
+}
+
 export async function getSimulationForUser(
   userId: string,
   simulationId: string

@@ -128,8 +128,18 @@ export function selectRelevantMemory(
   return { kind: "ready", memory, recordsUsed: selected.length };
 }
 
-export async function recallMemoryForUser(userId: string, query: string): Promise<RecallResult> {
-  return selectRelevantMemory(query, await readAllVaultFilesForUser(userId));
+export async function recallMemoryForUser(
+  userId: string,
+  query: string,
+  maxRecords = 8,
+  maxTokens = 6_000
+): Promise<RecallResult> {
+  return selectRelevantMemory(
+    query,
+    await readAllVaultFilesForUser(userId),
+    maxRecords,
+    maxTokens
+  );
 }
 
 export interface SaveMemoryInput {
