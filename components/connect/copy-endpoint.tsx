@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCopyText } from "@/components/connect/use-copy-text";
 
 export function CopyEndpoint({
   endpoint,
@@ -9,18 +9,7 @@ export function CopyEndpoint({
   endpoint: string;
   compact?: boolean;
 }) {
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(endpoint);
-      setCopyState("copied");
-      window.setTimeout(() => setCopyState("idle"), 1800);
-    } catch {
-      setCopyState("error");
-      window.setTimeout(() => setCopyState("idle"), 2400);
-    }
-  }
+  const { copy, copyState } = useCopyText(endpoint);
 
   return (
     <button

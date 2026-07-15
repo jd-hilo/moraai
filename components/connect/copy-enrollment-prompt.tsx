@@ -1,21 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCopyText } from "@/components/connect/use-copy-text";
 import { CLAUDE_ENROLLMENT_PROMPT } from "@/lib/claude/enrollment-prompt";
 
 export function CopyEnrollmentPrompt({ compact = false }: { compact?: boolean }) {
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(CLAUDE_ENROLLMENT_PROMPT);
-      setCopyState("copied");
-      window.setTimeout(() => setCopyState("idle"), 1800);
-    } catch {
-      setCopyState("error");
-      window.setTimeout(() => setCopyState("idle"), 2400);
-    }
-  }
+  const { copy, copyState } = useCopyText(CLAUDE_ENROLLMENT_PROMPT);
 
   return (
     <button
