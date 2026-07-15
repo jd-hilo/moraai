@@ -47,6 +47,7 @@ vi.mock("@/lib/providers/call", () => ({ callLLM: mocks.providerCall }));
 import {
   recallMemoryForUser,
   saveMemoryForUser,
+  selectBroadMemory,
   selectRelevantMemory,
 } from "@/lib/mcp/memory";
 
@@ -77,6 +78,29 @@ describe("provider-free MCP memory", () => {
       "identity/working-style.md": "I prefer focused mornings.",
     });
     expect(result).toEqual({ kind: "no_match", memory: "", recordsUsed: 0 });
+  });
+
+  it("builds a bounded cross-category overview for explicit broad coaching", () => {
+    const result = selectBroadMemory(
+      {
+        "_log.md": "Private storage log",
+        "identity/focus.md": "Morning focus is strongest.",
+        "identity/second.md": "A second identity record.",
+        "people/alex.md": "Alex is a trusted friend.",
+        "goals/launch.md": "Launch the product carefully.",
+      },
+      3,
+      100
+    );
+
+    expect(result.kind).toBe("ready");
+    expect(result.recordsUsed).toBe(3);
+    expect(result.memory).toContain("Morning focus is strongest.");
+    expect(result.memory).toContain("Alex is a trusted friend.");
+    expect(result.memory).toContain("Launch the product carefully.");
+    expect(result.memory).not.toContain("A second identity record.");
+    expect(result.memory).not.toContain("Private storage log");
+    expect(result.memory).not.toContain("identity/focus.md");
   });
 
   it("limits recall to eight records and approximately the token cap", () => {

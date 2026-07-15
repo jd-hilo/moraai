@@ -51,6 +51,7 @@ import { registerMoraTools } from "@/lib/mcp/tools";
 interface RegisteredTool {
   config: {
     annotations?: Record<string, boolean>;
+    description?: string;
     outputSchema?: unknown;
     _meta?: Record<string, unknown>;
   };
@@ -142,6 +143,7 @@ describe("MCP tool surface", () => {
       changes: [{ summary: "Created identity/focus.md" }, { summary: "Created goals/launch.md" }],
     });
     mocks.buildLifeCoachContextForUser.mockResolvedValue({
+      mode: "focused",
       status: "ok",
       nextAction: "Claude should reason over the evidence.",
       contextPolicy: {
@@ -197,6 +199,7 @@ describe("MCP tool surface", () => {
       readOnlyHint: false,
       idempotentHint: true,
     });
+    expect(tools.get("life_coach")?.config.description).toContain("Use Mora as my life coach");
     for (const name of ["create_simulation", "simulate_future", "run_simulation"]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         readOnlyHint: false,
