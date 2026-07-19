@@ -25,6 +25,10 @@ const STOP_WORDS = new Set([
   "from", "have", "into", "just", "more", "most", "should", "that", "their", "them",
   "then", "there", "these", "they", "this", "those", "want", "what", "when", "where",
   "which", "with", "would", "your", "you", "mine", "myself", "tell", "know",
+  "the", "and", "for", "are", "was", "has", "had", "his", "her", "she", "him",
+  "its", "who", "how", "why", "will", "can", "not", "but", "did", "get", "got",
+  "very", "really", "much", "many", "some", "such", "than", "too", "now", "like",
+  "whats", "well", "going", "doing", "things", "thing", "stuff",
 ]);
 
 export class McpMemoryError extends Error {
@@ -42,10 +46,14 @@ function compact(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+// Only meaningful terms count toward relevance. Falling back to filler words
+// ("my", "the", "is") made every record match and turned recall into a
+// rotating greatest-hits list, surfacing unrelated — sometimes sensitive —
+// facts for any query. A query with no meaningful terms now matches nothing,
+// which callers surface as an honest no_match.
 function queryTerms(query: string): string[] {
-  const all = normalize(query).split(" ").filter((term) => term.length > 1);
-  const meaningful = all.filter((term) => !STOP_WORDS.has(term));
-  return [...new Set(meaningful.length > 0 ? meaningful : all)];
+  const all = normalize(query).split(" ").filter((term) => term.length > 2);
+  return [...new Set(all.filter((term) => !STOP_WORDS.has(term)))];
 }
 
 function stripFrontmatter(content: string): string {
