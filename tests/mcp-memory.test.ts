@@ -80,6 +80,35 @@ describe("provider-free MCP memory", () => {
     expect(result).toEqual({ kind: "no_match", memory: "", recordsUsed: 0 });
   });
 
+  it("does not let filler words turn recall into a greatest-hits dump", () => {
+    const offTopicVault = {
+      "patterns/networking.md": "The user is deeply embedded in the startup ecosystem.",
+      "goals/college-apps.md": "The user is preparing college applications.",
+      "life/injury.md": "The user broke a leg on 2026-07-09.",
+    };
+
+    expect(
+      selectRelevantMemory("What's my relationship like with my sister and my parents?", offTopicVault)
+    ).toEqual({ kind: "no_match", memory: "", recordsUsed: 0 });
+    expect(selectRelevantMemory("What is the capital of France?", offTopicVault)).toEqual({
+      kind: "no_match",
+      memory: "",
+      recordsUsed: 0,
+    });
+
+    const withFamily = {
+      ...offTopicVault,
+      "people/sister.md": "The user's sister is studying biology and they talk weekly.",
+    };
+    const familyRecall = selectRelevantMemory(
+      "What's my relationship like with my sister and my parents?",
+      withFamily
+    );
+    expect(familyRecall.kind).toBe("ready");
+    expect(familyRecall.recordsUsed).toBe(1);
+    expect(familyRecall.memory).toContain("sister is studying biology");
+  });
+
   it("builds a bounded cross-category overview for explicit broad coaching", () => {
     const result = selectBroadMemory(
       {

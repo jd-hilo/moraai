@@ -32,4 +32,29 @@ describe("simulation report synthesis prompt", () => {
     expect(prompt).toContain("keep that alternative as the explicit baseline");
     expect(prompt).toContain("entire JSON response under 450 words");
   });
+
+  it("forces verdict language to track the actual probability distribution", () => {
+    const prompt = buildReportSynthesisPrompt(
+      null,
+      "context",
+      "Move to NYC vs LA",
+      "",
+      [
+        { id: "nyc", title: "The NYC Marketplace", description: "NYC path.", probability: 15 },
+        { id: "college", title: "College Convergence", description: "College path.", probability: 15 },
+      ],
+      [
+        { possibilityId: "nyc", status: "complete", output: "You move." },
+        { possibilityId: "college", status: "complete", output: "You study." },
+      ],
+      5,
+      new Date("2026-07-19T12:00:00.000Z")
+    );
+
+    expect(prompt).toContain('the single most likely path is "The NYC Marketplace" at 15%');
+    expect(prompt).toContain('Only claim "you will likely X" when the paths leading to outcome X together carry more than 50%');
+    expect(prompt).toContain("no single outcome dominates");
+    expect(prompt).toContain("Today's date is July 19, 2026");
+    expect(prompt).toContain("NOT the probability that the verdict happens");
+  });
 });

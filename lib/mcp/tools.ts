@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import type { ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import {
   registerAppResource,
   registerAppTool,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/mcp/memory";
 import {
   createSimulationForUser,
+  deleteSimulationForUser,
   getSimulationForUser,
   listSimulationsForUser,
   runSimulationForUser,
@@ -63,6 +65,58 @@ const MUTATES_SIMULATIONS = {
   idempotentHint: false,
   openWorldHint: false,
 } as const;
+
+const SIMULATION_PROGRESS_HEARTBEAT_MS = 15_000;
+
+interface McpProgressContext {
+  _meta?: { progressToken?: string | number };
+  signal?: AbortSignal;
+  sendNotification?: (notification: ServerNotification) => Promise<void>;
+}
+
+function simulationProgressReporter(extra: McpProgressContext) {
+  const progressToken = extra._meta?.progressToken;
+  let progress = 0;
+  let message = "Starting Mora simulation.";
+  let stopped = false;
+
+  const send = async () => {
+    if (
+      stopped ||
+      progressToken === undefined ||
+      !extra.sendNotification ||
+      extra.signal?.aborted
+    ) {
+      return;
+    }
+    await extra
+      .sendNotification({
+        method: "notifications/progress",
+        params: { progressToken, progress, total: 100, message },
+      })
+      .catch(() => undefined);
+  };
+
+  const heartbeat =
+    progressToken !== undefined && extra.sendNotification
+      ? setInterval(() => {
+          void send();
+        }, SIMULATION_PROGRESS_HEARTBEAT_MS)
+      : undefined;
+  heartbeat?.unref?.();
+
+  return {
+    update: async (nextProgress: number, nextMessage: string) => {
+      progress = Math.max(progress, Math.min(100, nextProgress));
+      message = nextMessage;
+      await send();
+    },
+    stop: () => {
+      stopped = true;
+      if (heartbeat) clearInterval(heartbeat);
+    },
+  };
+}
 
 const MEMORY_WRITE_INPUT_SCHEMA = {
   category: z.enum(MEMORY_CATEGORIES).describe("The Mora memory category."),
@@ -278,7 +332,9 @@ function safeError(error: unknown) {
         nextAction:
           error.code === "INSUFFICIENT_CREDITS"
             ? "Open Mora to review your credit balance."
-            : "Check the simulation status and try the appropriate next step.",
+            : error.code === "UNCLEAR_SCENARIO"
+              ? "Mora did not run a simulation because the scenario was too vague. Ask the user the clarifying question in `message`, then call the tool again with a concrete scenario."
+              : "Check the simulation status and try the appropriate next step.",
         message: error.message,
         ...error.details,
       },
@@ -729,15 +785,22 @@ export function registerMoraTools(server: McpServer): void {
         },
       },
     },
-    async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
+    async ({ scenario, narrative, title, timeHorizonYears }, extra) => {
+      const progress = simulationProgressReporter(extra);
       try {
+        await progress.update(1, "Starting Mora simulation.");
+        const { authInfo } = extra;
         const user = await moraUser(authInfo);
-        const simulation = await simulateFutureForUser(user, {
-          scenario,
-          narrative,
-          title,
-          timeHorizonYears,
-        });
+        const simulation = await simulateFutureForUser(
+          user,
+          {
+            scenario,
+            narrative,
+            title,
+            timeHorizonYears,
+          },
+          progress.update
+        );
         const completedPathCount = simulation.runs.filter(
           (run) => run.status === "complete" && run.output
         ).length;
@@ -772,6 +835,39 @@ export function registerMoraTools(server: McpServer): void {
           }),
           report: simulation.report,
           simulationUrl: simulationsUrl(simulation.id),
+        });
+      } catch (error) {
+        return safeError(error);
+      } finally {
+        progress.stop();
+      }
+    }
+  );
+
+  server.registerTool(
+    "delete_simulation",
+    {
+      title: "Delete a Mora simulation",
+      description:
+        "Permanently delete one of the authenticated user's simulations. Not reversible. Call only after the user explicitly confirms deleting this specific simulation.",
+      inputSchema: {
+        simulationId: z.string().trim().min(1).max(120),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ simulationId }, { authInfo }) => {
+      try {
+        const user = await moraUser(authInfo);
+        const deleted = await deleteSimulationForUser(user.id, simulationId);
+        return result({
+          status: "ok",
+          nextAction: "Confirm to the user that the simulation was permanently deleted.",
+          deletedSimulationId: deleted.id,
         });
       } catch (error) {
         return safeError(error);

@@ -4,6 +4,7 @@
  */
 
 import type { Possibility, PossibilityRun } from "@/lib/skills/simulations/types";
+import { formatSimulationDate } from "@/lib/prompts/simulations/lens-generation";
 
 export function buildReportSynthesisPrompt(
   _userName: string | null,
@@ -12,8 +13,11 @@ export function buildReportSynthesisPrompt(
   _narrative: string,
   possibilities: Possibility[],
   runs: PossibilityRun[],
-  timeHorizonYears: number
+  timeHorizonYears: number,
+  today: Date = new Date()
 ): string {
+  const todayText = formatSimulationDate(today);
+  const currentYear = today.getFullYear();
   const runBlocks = runs
     .filter((r) => r.status === "complete" && r.output)
     .map((r) => {
@@ -34,8 +38,9 @@ export function buildReportSynthesisPrompt(
   const topPossibility = [...possibilities]
     .filter((p) => runs.find((r) => r.possibilityId === p.id && r.status === "complete"))
     .sort((a, b) => b.probability - a.probability)[0];
+  const topProbability = topPossibility?.probability ?? 0;
 
-  return `You are synthesizing a scenario simulation for the user.
+  return `You are synthesizing a scenario simulation for the user. Today's date is ${todayText}; the simulation covers today through roughly ${currentYear + timeHorizonYears}.
 
 ## Scenario
 ${scenario}
@@ -51,13 +56,13 @@ ${runBlocks}${skippedNote}
 
 ## Task
 
-Write a matter-of-fact simulation report. Synthesize across all possibilities to identify the most likely outcome and what the user should know.
+Write a matter-of-fact simulation report. Synthesize across all possibilities to identify what the probability distribution actually supports and what the user should know.
 If the scenario names an alternative with wording such as "instead of" or "versus", keep that alternative as the explicit baseline throughout the verdict, summary, and findings. Do not reduce a comparison to a simulation of only the chosen option.
 
 Return ONLY a JSON object with this exact shape:
 
 {
-  "verdict": "1–2 concise sentences. State the most likely outcome factually. No hedging.",
+  "verdict": "1–2 concise sentences stating what the paths collectively support, with certainty language calibrated to the probabilities below.",
   "overallConfidence": 0-100,
   "topPossibilityId": "${topPossibility?.id ?? ""}",
   "summary": "2 concise sentences. What is the realistic picture across the probability-weighted paths? What matters most?",
@@ -76,7 +81,9 @@ Return ONLY a JSON object with this exact shape:
 }
 
 Rules:
-- "overallConfidence" reflects convergence across paths — high if most paths land similarly, low if widely divergent.
+- Verdict calibration: the single most likely path is "${topPossibility?.title ?? "unknown"}" at ${topProbability}%. Only claim "you will likely X" when the paths leading to outcome X together carry more than 50% probability. If no single path exceeds 35%, the verdict MUST open by stating that no single outcome dominates, then describe the 2–3 clusters of similar paths and their combined probabilities. Manufacturing false certainty is the one failure this report cannot have.
+- Temporal grounding: everything in this report is a projection from today (${todayText}) forward. Never describe an event in a year before ${currentYear} as an outcome.
+- "overallConfidence" reflects convergence across paths — high if most paths land similarly, low if widely divergent. It is a measure of agreement between paths, NOT the probability that the verdict happens.
 - "topPossibilityId" must be the exact id string of the highest-probability possibility that completed.
 - Address the user only as "you" and "your" in every user-facing field. Never use any personal name, account name, or third-person pronoun for the user; memory and account names can differ.
 - Every bullet earns its place. No filler. No platitudes.

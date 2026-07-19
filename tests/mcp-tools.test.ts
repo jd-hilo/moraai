@@ -63,7 +63,12 @@ interface RegisteredTool {
     outputSchema?: unknown;
     _meta?: Record<string, unknown>;
   };
-  callback: (input: never, context: { authInfo: AuthInfo }) => Promise<{
+  callback: (input: never, context: {
+    authInfo: AuthInfo;
+    _meta?: { progressToken?: string | number };
+    signal?: AbortSignal;
+    sendNotification?: (notification: never) => Promise<void>;
+  }) => Promise<{
     isError?: boolean;
     content: Array<{ text: string }>;
     structuredContent?: Record<string, unknown>;
@@ -203,8 +208,13 @@ describe("MCP tool surface", () => {
       "get_simulation",
       "create_simulation",
       "simulate_future",
+      "delete_simulation",
       "run_simulation",
     ]);
+    expect(tools.get("delete_simulation")?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
     expect(tools.get("save_memory")?.config.annotations).toMatchObject({
       readOnlyHint: false,
       idempotentHint: true,
@@ -428,7 +438,8 @@ describe("MCP tool surface", () => {
         narrative: "I would keep my current job.",
         title: "Lisbon move",
         timeHorizonYears: 3,
-      }
+      },
+      expect.any(Function)
     );
     expect(response.structuredContent).toEqual({
       status: "ok",
@@ -461,6 +472,58 @@ describe("MCP tool surface", () => {
     expect(JSON.stringify(response.structuredContent)).not.toContain("RAW PATH");
     expect(payload.nextAction).toContain("Stop immediately");
     expect(tools.get("simulate_future")?.config.outputSchema).toBeDefined();
+  });
+
+  it("keeps long simulation streams active with MCP progress notifications", async () => {
+    const completedSimulation = await mocks.simulateFutureForUser();
+    mocks.simulateFutureForUser.mockClear();
+    let finishSimulation!: (value: unknown) => void;
+    mocks.simulateFutureForUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishSimulation = resolve;
+        })
+    );
+
+    vi.useFakeTimers();
+    const tools = registeredTools();
+    const sendNotification = vi.fn().mockResolvedValue(undefined);
+    const responsePromise = tools.get("simulate_future")!.callback(
+      {
+        scenario: "Move to Lisbon",
+        narrative: "I would keep my current job.",
+        title: "Lisbon move",
+        timeHorizonYears: 3,
+      } as never,
+      {
+        authInfo,
+        _meta: { progressToken: "qa-progress" },
+        signal: new AbortController().signal,
+        sendNotification,
+      }
+    );
+
+    try {
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sendNotification).toHaveBeenCalledWith({
+        method: "notifications/progress",
+        params: {
+          progressToken: "qa-progress",
+          progress: 1,
+          total: 100,
+          message: "Starting Mora simulation.",
+        },
+      });
+
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(sendNotification).toHaveBeenCalledTimes(2);
+
+      finishSimulation(completedSimulation);
+      const response = await responsePromise;
+      expect(response.isError).not.toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("returns onboarding and no-match states without leaking internal details", async () => {

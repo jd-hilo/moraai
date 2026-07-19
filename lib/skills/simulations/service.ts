@@ -2,7 +2,7 @@ import { after } from "next/server";
 import { Prisma, type User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireCredits, CreditsExhaustedError } from "@/lib/credits";
-import { generateLenses } from "@/lib/pipelines/simulations/generate-lenses";
+import { generateLenses, UnclearScenarioError } from "@/lib/pipelines/simulations/generate-lenses";
 import { generateNarrative } from "@/lib/pipelines/simulations/generate-narrative";
 import { generateReport } from "@/lib/pipelines/simulations/generate-report";
 import { runLensSimulation } from "@/lib/pipelines/simulations/run-lens-simulation";
@@ -21,6 +21,17 @@ export const MIN_CREDITS_RUN_SIMULATION = 40;
 
 type Scheduler = (work: () => Promise<void>) => void;
 const scheduleAfterResponse: Scheduler = (work) => after(work);
+export type SimulationProgressReporter = (progress: number, message: string) => Promise<void>;
+
+const noSimulationProgress: SimulationProgressReporter = async () => undefined;
+
+async function safelyReportProgress(
+  reporter: SimulationProgressReporter,
+  progress: number,
+  message: string
+): Promise<void> {
+  await reporter(progress, message).catch(() => undefined);
+}
 
 export class SimulationServiceError extends Error {
   constructor(
@@ -41,15 +52,50 @@ export interface CreateSimulationInput {
   timeHorizonYears: number;
 }
 
+// Words kept lowercase inside a Title Case title (unless first or last).
+const TITLE_SMALL_WORDS = new Set([
+  "a", "an", "and", "as", "at", "but", "by", "for", "from", "in", "into",
+  "nor", "of", "on", "onto", "or", "over", "the", "to", "vs", "via", "with",
+]);
+
+/** Normalize any raw title or scenario echo into a clean Title Case summary. */
+export function normalizeSimulationTitle(raw: string): string {
+  const words = raw.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const cased = words.map((word, index) => {
+    if (/[A-Z]/.test(word.slice(1))) return word; // preserve acronyms like NYC, LA
+    const lower = word.toLowerCase();
+    const isEdge = index === 0 || index === words.length - 1;
+    if (!isEdge && TITLE_SMALL_WORDS.has(lower)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+  return cased.join(" ").slice(0, 80).trim();
+}
+
+/**
+ * Cheap pre-LLM signal check. Catches obviously empty or symbol/number-only
+ * input; the lens-generation model performs the semantic gibberish check.
+ */
+function assertScenarioHasSignal(scenario: string): void {
+  const alphaWords = scenario.split(/\s+/).filter((word) => /[a-zA-Z]{2,}/.test(word));
+  if (scenario.length < 8 || alphaWords.length < 2) {
+    throw new SimulationServiceError(
+      "UNCLEAR_SCENARIO",
+      422,
+      "Mora couldn't find a concrete decision in that scenario. Describe it as a specific what-if, e.g. \"What if I move to Austin next year?\""
+    );
+  }
+}
+
 function normalizeCreateInput(input: CreateSimulationInput) {
   const scenario = input.scenario.trim();
   const narrative = input.narrative?.trim() ?? "";
-  const title = input.title?.trim() || scenario.slice(0, 80);
   const years = Math.round(input.timeHorizonYears);
 
   if (!scenario) {
     throw new SimulationServiceError("INVALID_INPUT", 400, "Scenario is required.");
   }
+  assertScenarioHasSignal(scenario);
+  const title = normalizeSimulationTitle(input.title?.trim() || scenario.slice(0, 80));
   if (!Number.isFinite(years) || years < 1 || years > 50) {
     throw new SimulationServiceError(
       "INVALID_INPUT",
@@ -178,10 +224,14 @@ export async function createSimulationForUser(
       await generateSimulationPossibilities(user, simulation.id);
     } catch (error) {
       console.error(`[simulations] lens generation failed for ${simulation.id}:`, error);
+      const message =
+        error instanceof UnclearScenarioError
+          ? `Mora needs a clearer scenario before simulating. ${error.question}`
+          : (error as Error).message;
       await prisma.simulation
         .update({
           where: { id: simulation.id },
-          data: { status: "failed", error: (error as Error).message },
+          data: { status: "failed", error: message },
         })
         .catch(() => undefined);
     }
@@ -197,7 +247,8 @@ export async function createSimulationForUser(
  */
 export async function simulateFutureForUser(
   user: User,
-  input: CreateSimulationInput
+  input: CreateSimulationInput,
+  reportProgress: SimulationProgressReporter = noSimulationProgress
 ): Promise<SimulationDetail> {
   const { scenario, narrative, title, years } = normalizeCreateInput(input);
 
@@ -223,16 +274,28 @@ export async function simulateFutureForUser(
     },
     select: { id: true },
   });
+  await safelyReportProgress(
+    reportProgress,
+    5,
+    "Simulation created. Preparing ten possible paths."
+  );
 
   try {
     await generateSimulationPossibilities(user, simulation.id);
+    await safelyReportProgress(reportProgress, 25, "Ten possible paths are ready.");
   } catch (error) {
+    if (error instanceof UnclearScenarioError) {
+      // Don't leave a junk row behind for input Mora refused to fabricate from.
+      await prisma.simulation.delete({ where: { id: simulation.id } }).catch(() => undefined);
+      throw new SimulationServiceError("UNCLEAR_SCENARIO", 422, error.question);
+    }
     await markSimulationFailed(simulation.id, error);
     throw error;
   }
 
   try {
     await beginSimulationRun(user, simulation.id);
+    await safelyReportProgress(reportProgress, 30, "Running all ten paths in parallel.");
   } catch (error) {
     // A credit or state error leaves a generated simulation available to run
     // later; it is not a failed simulation.
@@ -240,7 +303,7 @@ export async function simulateFutureForUser(
   }
 
   try {
-    await executeSimulation(user, simulation.id);
+    await executeSimulation(user, simulation.id, reportProgress);
   } catch (error) {
     await markSimulationFailed(simulation.id, error);
     throw error;
@@ -255,7 +318,30 @@ export async function simulateFutureForUser(
       { simulationId: simulation.id }
     );
   }
+  await safelyReportProgress(reportProgress, 100, "Simulation complete.");
   return completed;
+}
+
+/**
+ * Permanently delete a simulation the user owns. Blocked while background
+ * stages are still writing to the row so a job can't resurrect or crash on it.
+ */
+export async function deleteSimulationForUser(
+  userId: string,
+  simulationId: string
+): Promise<{ id: string }> {
+  const simulation = await findOwnedSimulation(userId, simulationId);
+  if (!simulation) throw new SimulationServiceError("NOT_FOUND", 404, "Simulation not found.");
+  const busyStatuses: SimulationStatus[] = ["generating_lenses", "running", "generating_report"];
+  if (busyStatuses.includes(simulation.status as SimulationStatus)) {
+    throw new SimulationServiceError(
+      "INVALID_STATE",
+      409,
+      `Simulation cannot be deleted while its status is ${simulation.status}.`
+    );
+  }
+  await prisma.simulation.delete({ where: { id: simulation.id } });
+  return { id: simulation.id };
 }
 
 export async function runSimulationForUser(
@@ -364,7 +450,11 @@ async function generateSimulationPossibilities(user: User, simulationId: string)
   });
 }
 
-async function executeSimulation(user: User, simulationId: string): Promise<void> {
+async function executeSimulation(
+  user: User,
+  simulationId: string,
+  reportProgress: SimulationProgressReporter = noSimulationProgress
+): Promise<void> {
   const simulation = await findOwnedSimulation(user.id, simulationId);
   if (!simulation) throw new Error("Simulation not found for execution.");
 
@@ -388,6 +478,7 @@ async function executeSimulation(user: User, simulationId: string): Promise<void
     data: { runs: runningRuns as unknown as Prisma.InputJsonValue },
   });
 
+  let finishedRunCount = 0;
   const completedRuns = await Promise.all(
     possibilities.map(async (possibility) => {
       try {
@@ -417,6 +508,15 @@ async function executeSimulation(user: User, simulationId: string): Promise<void
           startedAt: runningAt,
           completedAt: new Date().toISOString(),
         } satisfies PossibilityRun;
+      } finally {
+        finishedRunCount += 1;
+        const runProgress =
+          30 + Math.round((finishedRunCount / possibilities.length) * 50);
+        await safelyReportProgress(
+          reportProgress,
+          runProgress,
+          `Finished ${finishedRunCount} of ${possibilities.length} paths.`
+        );
       }
     })
   );
@@ -439,6 +539,7 @@ async function executeSimulation(user: User, simulationId: string): Promise<void
     return;
   }
 
+  await safelyReportProgress(reportProgress, 85, "Synthesizing the completed paths.");
   const report = await generateReport({
     userName: user.name,
     vaultContext,
@@ -456,4 +557,5 @@ async function executeSimulation(user: User, simulationId: string): Promise<void
       report: report as unknown as Prisma.InputJsonValue,
     },
   });
+  await safelyReportProgress(reportProgress, 95, "Simulation saved. Preparing the response.");
 }
