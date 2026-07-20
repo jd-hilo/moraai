@@ -52,6 +52,7 @@ const synthesisElement = document.querySelector<HTMLElement>("#synthesis")!;
 const synthesisToggle = document.querySelector<HTMLButtonElement>("#synthesis-toggle")!;
 const synthesisPanel = document.querySelector<HTMLElement>("#synthesis-panel")!;
 const displayModeToggle = document.querySelector<HTMLButtonElement>("#display-mode-toggle")!;
+const openInMoraButton = document.querySelector<HTMLButtonElement>("#open-in-mora")!;
 const modeStatus = document.querySelector<HTMLElement>("#mode-status")!;
 
 type ReadingDestination = "fullscreen" | "inline" | "external";
@@ -97,6 +98,19 @@ async function openSimulationInMora(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function handleOpenInMora() {
+  openInMoraButton.disabled = true;
+  openInMoraButton.setAttribute("aria-busy", "true");
+  try {
+    if (!await openSimulationInMora()) {
+      announce("This simulation could not be opened in Mora. Please try again.");
+    }
+  } finally {
+    openInMoraButton.disabled = false;
+    openInMoraButton.removeAttribute("aria-busy");
   }
 }
 
@@ -335,6 +349,10 @@ displayModeToggle.addEventListener("click", async () => {
     displayModeToggle.disabled = false;
     displayModeToggle.removeAttribute("aria-busy");
   }
+});
+
+openInMoraButton.addEventListener("click", () => {
+  void handleOpenInMora();
 });
 
 const app = new App({ name: "Mora simulation results", version: "1.0.0" });
