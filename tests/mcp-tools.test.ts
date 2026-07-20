@@ -260,10 +260,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v7.html",
+        resourceUri: "ui://mora/simulation-results-v6.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v7.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v6.html",
     });
   });
 
@@ -287,19 +287,6 @@ describe("MCP tool surface", () => {
     expect(script).not.toContain("const readButton");
     expect(script).not.toContain("View Mora synthesis");
     expect(script).not.toContain("Hide Mora synthesis");
-  });
-
-  it("uses a wide path explorer without sacrificing the true-mobile layout", async () => {
-    const html = await readFile(
-      path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
-      "utf8"
-    );
-
-    expect(html).toContain('class="explorer-grid"');
-    expect(html).toContain("@media (min-width: 1000px)");
-    expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
-    expect(html).toContain("@media (max-width: 560px)");
-    expect(html).not.toContain("max-width: 920px");
   });
 
   it("uses Mora's canonical logo in every simulation brand line", async () => {
