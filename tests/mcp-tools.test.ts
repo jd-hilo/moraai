@@ -260,10 +260,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v5.html",
+        resourceUri: "ui://mora/simulation-results-v6.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v5.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v6.html",
     });
   });
 
@@ -301,7 +301,7 @@ describe("MCP tool surface", () => {
     expect(html).not.toContain("brand-mark");
   });
 
-  it("uses the mobile app's editorial type and warm palette", async () => {
+  it("uses the mobile app's editorial type and the web CTA gradient", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
@@ -309,7 +309,7 @@ describe("MCP tool surface", () => {
 
     expect(html).toContain('src: url("../../public/fonts/Recoleta-Regular.otf")');
     expect(html).toContain('--display: "Recoleta", Georgia, serif;');
-    expect(html).toContain("linear-gradient(135deg, #e87a7f 0%, #e4b5d3 52%, #e4b8a6 100%)");
+    expect(html).toContain("linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%)");
     expect(html).not.toContain("DM Sans");
     expect(html).not.toContain("#7268c7");
   });
