@@ -4,6 +4,7 @@ import {
 } from "@clerk/mcp-tools/next";
 
 const handler = protectedResourceHandlerClerk({
+  resource_name: "Mora",
   scopes_supported: ["profile", "email"],
 });
 const options = metadataCorsOptionsRequestHandler();
