@@ -260,14 +260,14 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v3.html",
+        resourceUri: "ui://mora/simulation-results-v6.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v3.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v6.html",
     });
   });
 
-  it("ships one cache-busted full-path reading control", async () => {
+  it("ships separate cache-busted reading and exact-simulation actions", async () => {
     const [html, script] = await Promise.all([
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/main.ts"), "utf8"),
@@ -278,9 +278,40 @@ describe("MCP tool surface", () => {
       'aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>'
     );
     expect(script).toContain("actions.append(synthesisToggle);");
+    expect(html.match(/id="open-in-mora"/g) ?? []).toHaveLength(1);
+    expect(html).toContain("Open in Mora");
+    expect(html).toContain('aria-label="Open this exact simulation in Mora"');
+    expect(script).toContain('app.openLink({ url: simulationUrl })');
+    expect(script).toContain('openInMoraButton.addEventListener("click"');
+    expect(script).not.toContain("window.open");
     expect(script).not.toContain("const readButton");
     expect(script).not.toContain("View Mora synthesis");
     expect(script).not.toContain("Hide Mora synthesis");
+  });
+
+  it("uses Mora's canonical logo in every simulation brand line", async () => {
+    const html = await readFile(
+      path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
+      "utf8"
+    );
+
+    expect(html.match(/class="brand-logo"/g) ?? []).toHaveLength(2);
+    expect(html.match(/src="\.\.\/\.\.\/public\/mora-logo\.png"/g) ?? []).toHaveLength(2);
+    expect(html.match(/alt="Mora"/g) ?? []).toHaveLength(2);
+    expect(html).not.toContain("brand-mark");
+  });
+
+  it("uses the mobile app's editorial type and the web CTA gradient", async () => {
+    const html = await readFile(
+      path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
+      "utf8"
+    );
+
+    expect(html).toContain('src: url("../../public/fonts/Recoleta-Regular.otf")');
+    expect(html).toContain('--display: "Recoleta", Georgia, serif;');
+    expect(html).toContain("linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%)");
+    expect(html).not.toContain("DM Sans");
+    expect(html).not.toContain("#7268c7");
   });
 
   it("continues an accidental status check into coaching instead of a tool tour", async () => {
@@ -472,6 +503,32 @@ describe("MCP tool surface", () => {
     expect(JSON.stringify(response.structuredContent)).not.toContain("RAW PATH");
     expect(payload.nextAction).toContain("Stop immediately");
     expect(tools.get("simulate_future")?.config.outputSchema).toBeDefined();
+  });
+
+  it("deep-links the exact simulation on the configured deployed Mora origin", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://staging.mymora.example/");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "other-production.example");
+
+    try {
+      const tools = registeredTools();
+      const response = await tools.get("simulate_future")!.callback(
+        {
+          scenario: "Move to Lisbon",
+          narrative: "I would keep my current job.",
+          title: "Lisbon move",
+          timeHorizonYears: 3,
+        } as never,
+        { authInfo }
+      );
+      const payload = response._meta!["mora/simulationResult"] as Record<string, unknown>;
+
+      expect(payload.simulation).toMatchObject({ id: "sim-complete" });
+      expect(payload.simulationUrl).toBe(
+        "https://staging.mymora.example/skills/simulations/sim-complete"
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("keeps long simulation streams active with MCP progress notifications", async () => {
