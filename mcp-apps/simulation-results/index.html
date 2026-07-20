@@ -119,7 +119,7 @@
         text-transform: uppercase;
       }
       h1 {
-        max-width: 780px;
+        max-width: 980px;
         margin: 0;
         font-family: var(--display);
         font-size: clamp(29px, 5vw, 42px);
@@ -127,7 +127,7 @@
         line-height: 1.06;
         letter-spacing: -.035em;
       }
-      .meta { max-width: 680px; margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+      .meta { max-width: 96ch; margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
       .count {
         padding: 5px 9px;
         color: var(--muted);
@@ -171,6 +171,8 @@
       .display-mode-toggle:hover { background: var(--surface-subtle); }
 
       .content { padding: 24px 32px 34px; }
+      .explorer-grid { min-width: 0; }
+      .path-browser { min-width: 0; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
       .section-label { margin: 0; color: var(--text); font-family: var(--display); font-size: 18px; }
       .section-hint { margin: 0; color: var(--quiet); font-size: 10px; }
@@ -226,7 +228,7 @@
         grid-template-columns: minmax(0, 1fr);
         row-gap: 0;
         align-items: start;
-        max-width: 920px;
+        width: 100%;
         margin-top: 18px;
         padding: 26px 28px 24px;
         background: var(--surface);
@@ -238,8 +240,8 @@
       .detail-kicker { margin: 0 0 7px; color: var(--quiet); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
       .detail-heading h2 { max-width: 700px; margin: 0; font-family: var(--display); font-size: clamp(24px, 4vw, 34px); font-weight: 400; line-height: 1.1; letter-spacing: -.025em; }
       .probability { padding: 6px 9px; color: #9c5257; font-size: 10px; font-weight: 700; line-height: 1.4; white-space: nowrap; background: var(--accent-soft); border-radius: 999px; font-variant-numeric: tabular-nums; }
-      .premise { max-width: 720px; margin: 15px 0 0; color: var(--muted); font-size: 13px; line-height: 1.58; }
-      .narrative { max-width: 760px; margin: 20px 0 0; color: #302e2c; font-size: 14px; line-height: 1.72; white-space: pre-wrap; }
+      .premise { max-width: 90ch; margin: 15px 0 0; color: var(--muted); font-size: 13px; line-height: 1.58; }
+      .narrative { max-width: 96ch; margin: 20px 0 0; color: #302e2c; font-size: 14px; line-height: 1.72; white-space: pre-wrap; }
       .narrative[data-expanded="false"] {
         display: -webkit-box;
         overflow: hidden;
@@ -253,9 +255,9 @@
 
       .toggle { min-height: 38px; padding: 0 16px; color: #fff; font-size: 12px; font-weight: 700; background: var(--ink); border: 1px solid var(--ink); border-radius: 999px; cursor: pointer; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease; }
       .toggle:hover { background: #34312f; }
-      .synthesis { max-width: 920px; margin-top: 18px; padding: 26px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; }
+      .synthesis { width: 100%; margin-top: 18px; padding: 26px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; }
       .synthesis h2 { margin: 0 0 18px; font-family: var(--display); font-size: 26px; font-weight: 400; letter-spacing: -.02em; }
-      .synthesis-body { max-width: 780px; color: #302e2c; font-size: 13px; line-height: 1.68; }
+      .synthesis-body { max-width: 1040px; color: #302e2c; font-size: 13px; line-height: 1.68; }
       .synthesis-intro p { margin: 0 0 11px; }
       .synthesis-intro .verdict { color: var(--text); font-family: var(--display); font-size: 19px; }
       .synthesis-body section { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 20px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
@@ -292,13 +294,25 @@
         display: block;
         overflow: visible;
       }
+      @media (min-width: 1000px) {
+        .explorer-grid {
+          display: grid;
+          grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+          gap: 18px;
+          align-items: start;
+        }
+        .section-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
+        .path-list { grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; }
+        .path-row { min-height: 48px; padding: 6px 3px; }
+        .path-detail { margin-top: 0; }
+      }
       @keyframes pulse { 50% { opacity: .45; } }
       @media (prefers-reduced-motion: reduce) {
         .state-line { animation: none; }
         .path-row, .toggle, .display-mode-toggle, .open-in-mora { transition: none; }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 560px) {
         .state, .header, .content { padding-right: 18px; padding-left: 18px; }
         .header { grid-template-columns: 1fr; gap: 16px; }
         .header-aside { flex-direction: row-reverse; align-items: center; justify-content: flex-end; }
@@ -348,12 +362,16 @@
           </div>
         </header>
         <div class="content">
-          <div class="section-heading">
-            <p class="section-label">Possible paths</p>
-            <p class="section-hint">Choose one to explore</p>
+          <div class="explorer-grid">
+            <div class="path-browser">
+              <div class="section-heading">
+                <p class="section-label">Possible paths</p>
+                <p class="section-hint">Choose one to explore</p>
+              </div>
+              <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
+            </div>
+            <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
           </div>
-          <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
-          <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
           <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>
           <section id="synthesis-panel" class="synthesis" hidden>
             <h2>Mora synthesis</h2>
