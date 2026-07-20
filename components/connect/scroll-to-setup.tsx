@@ -11,10 +11,10 @@ export function ScrollToSetup() {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    const alignInstructions = window.innerWidth >= 1024;
-    const firstStepCopy = setup.querySelector("article h3")?.parentElement;
-    const scrollTarget = alignInstructions && firstStepCopy ? firstStepCopy : setup;
-    const readingInset = alignInstructions ? 80 : 0;
+    const alignStepCards = window.innerWidth >= 1024;
+    const firstStep = setup.querySelector<HTMLElement>("article");
+    const scrollTarget = alignStepCards && firstStep ? firstStep : setup;
+    const readingInset = alignStepCards ? 80 : 0;
     let targetTop = 0;
 
     for (
