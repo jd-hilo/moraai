@@ -11,11 +11,22 @@ export function ScrollToSetup() {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    const setupTop = setup.getBoundingClientRect().top + window.scrollY;
-    const instructionOffset = window.innerWidth >= 768 ? 176 : 120;
+    const alignInstructions = window.innerWidth >= 1024;
+    const firstStepCopy = setup.querySelector("article h3")?.parentElement;
+    const scrollTarget = alignInstructions && firstStepCopy ? firstStepCopy : setup;
+    const readingInset = alignInstructions ? 80 : 0;
+    let targetTop = 0;
+
+    for (
+      let element: HTMLElement | null = scrollTarget;
+      element;
+      element = element.offsetParent as HTMLElement | null
+    ) {
+      targetTop += element.offsetTop;
+    }
 
     window.scrollTo({
-      top: setupTop + instructionOffset,
+      top: Math.max(0, targetTop - readingInset),
       behavior: reduceMotion ? "auto" : "smooth",
     });
     window.history.replaceState(null, "", "#install");

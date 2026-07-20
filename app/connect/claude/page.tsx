@@ -133,7 +133,7 @@ export default function ConnectClaudePage() {
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <ScrollReveal className="h-full" delay={0}>
               <article>
-              <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
+              <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6 lg:h-[352px] xl:h-[320px]">
                 <div className="w-full max-w-[340px] rounded-[1.4rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_18px_45px_-35px_rgba(35,32,30,0.3)]">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#242329]">
@@ -186,7 +186,7 @@ export default function ConnectClaudePage() {
 
             <ScrollReveal className="h-full" delay={100}>
               <article>
-              <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
+              <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6 lg:h-[352px] xl:h-[320px]">
                 <div className="w-full max-w-[390px] rounded-2xl border border-[#17171a]/10 bg-white p-3 shadow-[0_18px_45px_-35px_rgba(35,32,30,0.3)]">
                   <p className="px-2 pb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#8b8999]">
                     Mora MCP URL
@@ -213,7 +213,7 @@ export default function ConnectClaudePage() {
 
             <ScrollReveal className="h-full" delay={200}>
               <article>
-              <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6">
+              <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#17171a]/8 bg-[#f7f7f6] p-6 lg:h-[352px] xl:h-[320px]">
                 <div className="w-full max-w-[310px] rounded-[1.4rem] border border-[#17171a]/10 bg-white p-6 text-center shadow-[0_20px_50px_-35px_rgba(35,32,30,0.35)]">
                   <div className="mx-auto flex w-fit items-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_38%_35%,#ffc6e1_0%,#c6a6f0_58%,#8f85df_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]" />
@@ -253,7 +253,7 @@ export default function ConnectClaudePage() {
 
             <ScrollReveal className="h-full" delay={300}>
               <article>
-                <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#8f85df]/16 bg-[#f7f7f6] p-6">
+                <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-[#8f85df]/16 bg-[#f7f7f6] p-6 lg:h-[352px] xl:h-[320px]">
                   <div className="w-full max-w-[330px] rounded-[1.4rem] border border-[#17171a]/10 bg-white p-5 shadow-[0_20px_50px_-35px_rgba(35,32,30,0.35)]">
                     <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#7b73cf]">
                       New message to Claude
