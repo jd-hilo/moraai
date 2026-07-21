@@ -11,8 +11,10 @@ const source = artifact.toString("utf8");
 const rawBytes = artifact.byteLength;
 const gzipBytes = gzipSync(artifact).byteLength;
 
-const MAX_RAW_BYTES = 450_000;
-const MAX_GZIP_BYTES = 110_000;
+// Known-good pre-#28 was 408,973 bytes. Keep the resource below both that
+// artifact and the apparent 400 KiB (409,600-byte) Claude host boundary.
+const MAX_RAW_BYTES = 408_500;
+const MAX_GZIP_BYTES = 100_000;
 
 const failures = [];
 if (rawBytes > MAX_RAW_BYTES) {

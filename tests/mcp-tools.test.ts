@@ -207,7 +207,7 @@ describe("MCP tool surface", () => {
     expect(registerResource).toHaveBeenCalledTimes(1);
     const [name, uri, metadata, callback] = registerResource.mock.calls[0];
     expect(name).toBe("mora-simulation-results");
-    expect(uri).toBe("ui://mora/simulation-results-v8.html");
+    expect(uri).toBe("ui://mora/simulation-results-v9.html");
     expect(metadata).toMatchObject({
       title: "Mora simulation results",
       mimeType: "text/html;profile=mcp-app",
@@ -217,7 +217,7 @@ describe("MCP tool surface", () => {
     expect(resource).toMatchObject({
       contents: [
         {
-          uri: "ui://mora/simulation-results-v8.html",
+          uri: "ui://mora/simulation-results-v9.html",
           mimeType: "text/html;profile=mcp-app",
           _meta: {
             ui: {
@@ -299,10 +299,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v8.html",
+        resourceUri: "ui://mora/simulation-results-v9.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v8.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v9.html",
     });
   });
 
