@@ -5,19 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mora simulation results</title>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap");
-
       :root {
         color-scheme: light;
-        font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        --bg: #ffffff;
-        --surface-subtle: #f7f7f7;
-        --text: #0d0d0d;
-        --muted: #6e6e80;
-        --quiet: #92929c;
-        --line: #e5e5e5;
-        --accent: #7268c7;
-        --accent-soft: #f2eff8;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --bg: #fafafa;
+        --surface-subtle: #f4f3f0;
+        --text: #161514;
+        --muted: rgba(22, 21, 20, .7);
+        --quiet: rgba(22, 21, 20, .5);
+        --line: rgba(22, 21, 20, .09);
+        --accent: #e87a7f;
+        --accent-mid: #e4b5d3;
+        --accent-warm: #e4b8a6;
+        --accent-soft: #fbefed;
+        --display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
         --danger: #9c3a35;
         --danger-soft: #fbeeed;
       }
@@ -75,7 +76,7 @@
         flex: 0 0 auto;
         overflow: hidden;
         border-radius: 50%;
-        background: var(--accent);
+        background: linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm));
       }
 
       .brand-mark::after {
@@ -85,7 +86,7 @@
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #ffc6e1;
+        background: rgba(255, 255, 255, .72);
         content: "";
       }
 
@@ -94,9 +95,9 @@
         height: 11px;
         border-radius: 999px;
         background: #eeeeef;
-        animation: pulse 1.4s ease-in-out infinite;
       }
       .state-line.short { width: 56%; }
+      .state-help { margin: 2px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.5; }
       .error-state { grid-template-columns: 38px minmax(0, 1fr); align-items: start; align-content: center; }
       .error-mark { width: 36px; height: 36px; display: grid; place-items: center; color: var(--danger); background: var(--danger-soft); border-radius: 50%; }
       .error-copy h2 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -122,7 +123,7 @@
         letter-spacing: .1em;
         text-transform: uppercase;
       }
-      h1 { margin: 0; font-size: clamp(24px, 5vw, 34px); font-weight: 500; line-height: 1.12; letter-spacing: -.035em; }
+      h1 { margin: 0; font-family: var(--display); font-size: clamp(24px, 5vw, 34px); font-weight: 500; line-height: 1.12; letter-spacing: -.035em; }
       .meta { max-width: 700px; margin: 9px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
       .count { color: var(--accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
 
@@ -134,11 +135,10 @@
         border: 1px solid var(--line);
         border-radius: 999px;
         cursor: pointer;
-        transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
       }
       .display-mode-toggle:hover { background: var(--surface-subtle); }
 
-      .content { padding: 22px 28px 30px; }
+      .content { max-width: 1180px; margin: 0 auto; padding: 22px 28px 30px; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 11px; }
       .section-label { margin: 0; color: var(--text); font-size: 12px; font-weight: 600; }
       .section-hint { margin: 0; color: var(--quiet); font-size: 10px; }
@@ -165,13 +165,12 @@
         border: 1px solid transparent;
         border-radius: 9px;
         cursor: pointer;
-        transition: transform 180ms cubic-bezier(.16, 1, .3, 1), color 180ms ease, background-color 180ms ease, border-color 180ms ease;
       }
 
       .path-row:hover { color: var(--text); background: var(--surface-subtle); }
       .path-row:focus-visible, .toggle:focus-visible, .display-mode-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       .path-row:active, .toggle:active { transform: translateY(1px); }
-      .path-row[aria-selected="true"] { color: var(--text); background: var(--accent-soft); border-color: rgba(114, 104, 199, .18); }
+      .path-row[aria-selected="true"] { color: var(--text); background: var(--accent-soft); border-color: rgba(232, 122, 127, .2); }
       .path-number, .path-probability { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
       .path-number { color: var(--accent); }
       .path-copy { min-width: 0; }
@@ -191,9 +190,9 @@
       }
       .detail-heading { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: start; }
       .detail-kicker { margin: 0 0 6px; color: var(--accent); font-size: 10px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
-      .detail-heading h2 { margin: 0; font-size: clamp(19px, 4vw, 24px); font-weight: 500; line-height: 1.25; letter-spacing: -.025em; }
+      .detail-heading h2 { margin: 0; font-family: var(--display); font-size: clamp(19px, 4vw, 24px); font-weight: 500; line-height: 1.25; letter-spacing: -.025em; }
       .probability { color: var(--accent); font-size: 11px; font-weight: 600; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
-      .premise { max-width: 760px; margin: 0; padding-left: 12px; color: var(--muted); border-left: 2px solid #d9d5ed; font-size: 12px; line-height: 1.58; }
+      .premise { max-width: 760px; margin: 0; padding-left: 12px; color: var(--muted); border-left: 2px solid #e4b5d3; font-size: 12px; line-height: 1.58; }
       .narrative { max-width: 800px; margin: 0; color: #35353b; font-size: 13px; line-height: 1.68; white-space: pre-wrap; }
       .narrative[data-expanded="false"] {
         display: -webkit-box;
@@ -208,10 +207,10 @@
       .detail-footer strong { color: var(--text); font-weight: 600; }
       .context-note { margin-left: auto; color: var(--accent); }
 
-      .toggle { min-height: 36px; padding: 0 13px; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease; }
+      .toggle { min-height: 36px; padding: 0 13px; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
       .toggle:hover { background: var(--surface-subtle); }
       .synthesis { margin-top: 22px; padding-top: 24px; border-top: 1px solid var(--line); }
-      .synthesis h2 { margin: 0 0 17px; font-size: 20px; font-weight: 500; letter-spacing: -.02em; }
+      .synthesis h2 { margin: 0 0 17px; font-family: var(--display); font-size: 20px; font-weight: 500; letter-spacing: -.02em; }
       .synthesis-body { max-width: 820px; color: #35353b; font-size: 13px; line-height: 1.68; }
       .synthesis-intro p { margin: 0 0 11px; }
       .synthesis-intro .verdict { color: var(--text); font-size: 15px; font-weight: 600; }
@@ -221,19 +220,7 @@
       .synthesis-body li { position: relative; padding-left: 14px; }
       .synthesis-body li::before { position: absolute; top: .72em; left: 0; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); content: ""; }
 
-      html[data-display-mode="inline"] .header { padding-top: 18px; padding-bottom: 16px; }
-      html[data-display-mode="inline"] .brand-line { margin-bottom: 10px; }
       html[data-display-mode="inline"] .eyebrow { display: none; }
-      html[data-display-mode="inline"] h1 { font-size: clamp(22px, 5vw, 28px); }
-      html[data-display-mode="inline"] .meta {
-        display: -webkit-box;
-        overflow: hidden;
-        margin-top: 6px;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 1;
-      }
-      html[data-display-mode="inline"] .content { padding-top: 16px; padding-bottom: 18px; }
-      html[data-display-mode="inline"] .section-heading { margin-bottom: 8px; }
       html[data-display-mode="inline"] .path-copy { display: none; }
       html[data-display-mode="inline"] .path-row { grid-template-columns: auto minmax(0, 1fr); }
       html[data-display-mode="inline"] .path-probability { justify-self: end; }
@@ -252,12 +239,6 @@
         display: block;
         overflow: visible;
       }
-      @keyframes pulse { 50% { opacity: .45; } }
-      @media (prefers-reduced-motion: reduce) {
-        .state-line { animation: none; }
-        .path-row, .toggle, .display-mode-toggle { transition: none; }
-      }
-
       @media (max-width: 600px) {
         .state, .header, .content { padding-right: 17px; padding-left: 17px; }
         .header { grid-template-columns: 1fr; gap: 12px; }
@@ -286,6 +267,7 @@
         <div class="state-copy" aria-label="Loading simulation results">
           <div class="state-line"></div>
           <div class="state-line short"></div>
+          <p class="state-help">Loading your possible futures. Ask Claude to retry if this view does not finish.</p>
         </div>
       </section>
       <section id="error" class="state error-state" role="alert" hidden></section>

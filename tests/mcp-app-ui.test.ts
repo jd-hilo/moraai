@@ -12,7 +12,7 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBeLessThanOrEqual(409_000);
+    expect(artifact.byteLength).toBeLessThanOrEqual(408_500);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
     expect(source).not.toMatch(/data:(?:font|image)\//);
     expect(source).not.toContain("Recoleta-Regular.otf");
@@ -34,7 +34,8 @@ describe("MCP App host-safety regression guards", () => {
       if (selector.startsWith("#")) expect(html).toContain(`id="${selector.slice(1)}"`);
       if (selector.startsWith(".")) expect(html).toContain(`class="${selector.slice(1)}`);
     }
-    expect(html.match(/class="state-line/g) ?? []).toHaveLength(2);
+    expect(html).toContain("Loading your possible futures");
+    expect(html).toContain('class="state-help"');
     expect(html).not.toContain("<noscript>");
     expect(html).not.toMatch(/<p[^>]+style=/);
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
@@ -46,7 +47,7 @@ describe("MCP App host-safety regression guards", () => {
       "utf8"
     );
 
-    expect(html).toContain(".content { padding: 22px 28px 30px; }");
+    expect(html).toContain("max-width: 1180px");
     expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
     expect(html).toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
     expect(html).toContain("@media (max-width: 600px)");
