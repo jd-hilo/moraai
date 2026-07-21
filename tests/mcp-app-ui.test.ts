@@ -1,4 +1,5 @@
 import { gzipSync } from "node:zlib";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -12,8 +13,11 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBeLessThanOrEqual(408_500);
+    expect(artifact.byteLength).toBe(408_973);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
+    expect(createHash("sha256").update(artifact).digest("hex")).toBe(
+      "dbe919733d4e90da96db1a6675ded5ab37ee64eeb19e048b2f900dfe9ae82fe0"
+    );
     expect(source).not.toMatch(/data:(?:font|image)\//);
     expect(source).not.toContain("Recoleta-Regular.otf");
     expect(source).not.toContain("mora-logo.png");
@@ -34,20 +38,34 @@ describe("MCP App host-safety regression guards", () => {
       if (selector.startsWith("#")) expect(html).toContain(`id="${selector.slice(1)}"`);
       if (selector.startsWith(".")) expect(html).toContain(`class="${selector.slice(1)}`);
     }
-    expect(html).toContain("Loading your possible futures");
-    expect(html).toContain('class="state-help"');
+    expect(html).toContain('aria-label="Loading simulation results"');
+    expect(html).toContain("Mora simulation");
     expect(html).not.toContain("<noscript>");
     expect(html).not.toMatch(/<p[^>]+style=/);
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
-  it("uses the proven wide path grid and collapses safely for narrower hosts", async () => {
+  it("keeps the authored body on the exact known-good pre-branding boot structure", async () => {
+    const html = await readFile(
+      path.join(root, "mcp-apps/simulation-results/index.html"),
+      "utf8"
+    );
+    const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
+
+    expect(createHash("sha256").update(body).digest("hex")).toBe(
+      "2ef4d30e51b6c112c6ef354f7cbd378d384bb3c566008e969d5b185240748459"
+    );
+  });
+
+  it("keeps the proven narrow document flow and collapses safely for smaller hosts", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("max-width: 1180px");
+    expect(html).toContain(".content { padding: 22px 28px 30px; }");
+    expect(html).not.toContain("max-width: 1180px");
+    expect(html).not.toContain("explorer-grid");
     expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
     expect(html).toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
     expect(html).toContain("@media (max-width: 600px)");
