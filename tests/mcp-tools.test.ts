@@ -343,15 +343,19 @@ describe("MCP tool surface", () => {
     expect(html).not.toContain("<img");
   });
 
-  it("keeps the exact proven MCP resource tokens without embedded asset payloads", async () => {
+  it("uses Unreal's lightweight editorial tokens without external asset payloads", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("--bg: #ffffff");
-    expect(html).toContain("--accent: #7268c7");
-    expect(html).toContain("fonts.googleapis.com");
+    expect(html).toContain("--bg: #fafafa");
+    expect(html).toContain("--accent: #e87a7f");
+    expect(html).toContain("--accent-mid: #e4b5d3");
+    expect(html).toContain("--accent-warm: #e4b8a6");
+    expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
+    expect(html).toContain("linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm))");
+    expect(html).not.toContain("fonts.googleapis.com");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");
     expect(html).not.toContain("data:font/");

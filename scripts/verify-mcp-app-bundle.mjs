@@ -13,10 +13,10 @@ const rawBytes = artifact.byteLength;
 const gzipBytes = gzipSync(artifact).byteLength;
 const sha256 = createHash("sha256").update(artifact).digest("hex");
 
-// Claude's installed connector only mounts this exact proven v3 artifact.
-// Lock the bytes until the connector can be re-registered host-side.
-const EXPECTED_RAW_BYTES = 408_973;
-const EXPECTED_SHA256 = "dbe919733d4e90da96db1a6675ded5ab37ee64eeb19e048b2f900dfe9ae82fe0";
+// Lock the production-verified v3 artifact. After intentional resource changes,
+// Claude's installed connector must refresh its tools list before render tests.
+const EXPECTED_RAW_BYTES = 409_150;
+const EXPECTED_SHA256 = "77bac8148ed1b46f4292c039e5cf2c8b3fda75731f1a2c82e65ed0927b30401f";
 // zlib output varies by runtime; Vercel's build image is ~1 KB above local.
 const MAX_GZIP_BYTES = 102_000;
 
@@ -36,6 +36,8 @@ for (const forbidden of [
   "data:image/",
   "Recoleta-Regular.otf",
   "mora-logo.png",
+  "fonts.googleapis.com",
+  "fonts.gstatic.com",
 ]) {
   if (source.includes(forbidden)) failures.push(`bundle contains forbidden resource: ${forbidden}`);
 }

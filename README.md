@@ -92,6 +92,22 @@ Before testing the connector:
 
 The canonical production connector URL is `https://www.mymora.app/mcp`.
 
+When the MCP App HTML or resource metadata changes, treat Claude's installed
+connector cache as part of the release:
+
+1. Run `npm run build:mcp-apps` and keep the generated single-file artifact
+   within the enforced raw, gzip, and embedded-asset budgets.
+2. Verify the Vercel deployment is Ready before it receives the production
+   alias, and keep the last connector-verified deployment available for rollback.
+3. In the test Claude account, open **Customize → Connectors → Mora → More →
+   Refresh tools list**. Claude may otherwise keep a stale interactive resource
+   even while `/mcp` requests continue returning successfully.
+4. In fresh conversations, run status/recall and at least two simulations. Each
+   simulation must mount the Mora iframe without “Unable to reach Mora” or a
+   content-display error.
+5. Correlate the tests with Vercel runtime logs. `/mcp` should return only the
+   expected 200/202 sequence, with no 4xx/5xx responses.
+
 OAuth discovery is served from:
 
 - `/.well-known/oauth-protected-resource/mcp`
