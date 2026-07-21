@@ -2,7 +2,7 @@ import { KnowledgeGraph } from "@/components/memory/knowledge-graph";
 
 export default function MemoryPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", overflow: "hidden", background: "var(--color-bg)" }}>
       {/* Slim header */}
       <div style={{
         display: "flex",
@@ -12,10 +12,11 @@ export default function MemoryPage() {
         flexShrink: 0,
       }}>
         <h1 style={{
-          fontSize: "18px",
-          fontWeight: 600,
-          color: "#1a1a1a",
-          letterSpacing: "-0.02em",
+          fontFamily: "var(--font-display)",
+          fontSize: "32px",
+          fontWeight: 400,
+          color: "var(--color-text-primary)",
+          letterSpacing: "-0.035em",
           margin: 0,
         }}>
           Your Memory

@@ -195,6 +195,45 @@ describe("MCP tool surface", () => {
     });
   });
 
+  it("registers and serves the simulation App with host-safe resource metadata", async () => {
+    const registerResource = vi.fn();
+    const server = {
+      registerTool: vi.fn(),
+      registerResource,
+    };
+
+    registerMoraTools(server as unknown as McpServer);
+
+    expect(registerResource).toHaveBeenCalledTimes(1);
+    const [name, uri, metadata, callback] = registerResource.mock.calls[0];
+    expect(name).toBe("mora-simulation-results");
+    expect(uri).toBe("ui://mora/simulation-results-v8.html");
+    expect(metadata).toMatchObject({
+      title: "Mora simulation results",
+      mimeType: "text/html;profile=mcp-app",
+    });
+
+    const resource = await callback();
+    expect(resource).toMatchObject({
+      contents: [
+        {
+          uri: "ui://mora/simulation-results-v8.html",
+          mimeType: "text/html;profile=mcp-app",
+          _meta: {
+            ui: {
+              csp: {
+                resourceDomains: ["https://www.mymora.app"],
+              },
+            },
+          },
+        },
+      ],
+    });
+    expect(resource.contents[0].text).toContain('id="loading"');
+    expect(resource.contents[0].text).toContain('id="error"');
+    expect(resource.contents[0].text).toContain('id="results"');
+  });
+
   it("registers exactly the Claude-native beta tools with safe annotations", () => {
     const tools = registeredTools();
     expect([...tools.keys()]).toEqual([
@@ -260,10 +299,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v6.html",
+        resourceUri: "ui://mora/simulation-results-v8.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v6.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v8.html",
     });
   });
 
@@ -289,27 +328,30 @@ describe("MCP tool surface", () => {
     expect(script).not.toContain("Hide Mora synthesis");
   });
 
-  it("uses Mora's canonical logo in every simulation brand line", async () => {
+  it("uses a host-safe CSS Mora mark without embedding image assets", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html.match(/class="brand-logo"/g) ?? []).toHaveLength(2);
-    expect(html.match(/src="\.\.\/\.\.\/public\/mora-logo\.png"/g) ?? []).toHaveLength(2);
-    expect(html.match(/alt="Mora"/g) ?? []).toHaveLength(2);
-    expect(html).not.toContain("brand-mark");
+    expect(html.match(/class="brand-mark"/g) ?? []).toHaveLength(2);
+    expect(html.match(/class="brand-word">Mora/g) ?? []).toHaveLength(2);
+    expect(html).not.toContain("mora-logo.png");
+    expect(html).not.toContain("<img");
   });
 
-  it("uses the mobile app's editorial type and the web CTA gradient", async () => {
+  it("uses the mobile app's editorial hierarchy and peach CTA gradient without a font payload", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain('src: url("../../public/fonts/Recoleta-Regular.otf")');
-    expect(html).toContain('--display: "Recoleta", Georgia, serif;');
-    expect(html).toContain("linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%)");
+    expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
+    expect(html).toContain("--accent: #e87a7f");
+    expect(html).toContain("--accent-mid: #e4b5d3");
+    expect(html).toContain("--accent-warm: #e4b8a6");
+    expect(html).not.toContain("@font-face");
+    expect(html).not.toContain("Recoleta-Regular.otf");
     expect(html).not.toContain("DM Sans");
     expect(html).not.toContain("#7268c7");
   });

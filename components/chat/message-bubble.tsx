@@ -164,7 +164,7 @@ function MoraOrbIcon({ size = 18 }: { size?: number }) {
         width: size,
         height: size,
         borderRadius: "50%",
-        background: "radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%)",
+        background: "radial-gradient(circle at 38% 38%, #f8d6cf 0%, #e4b8a6 30%, #e4b5d3 62%, #e87a7f 100%)",
         boxShadow: "0 0 8px rgba(180,140,240,0.5), 0 0 3px rgba(255,180,220,0.4)",
         flexShrink: 0,
         cursor: "inherit",
@@ -195,7 +195,7 @@ function AssistantContent({
             {[0, 1, 2].map((i) => (
               <span key={i} style={{
                 display: "inline-block", width: 5, height: 5, borderRadius: "50%",
-                background: "radial-gradient(circle at 40% 40%, #efb6ef, #8f85df)",
+                background: "radial-gradient(circle at 40% 40%, #e4b5d3, #e87a7f)",
                 opacity: 0.3 + i * 0.22,
               }} />
             ))}

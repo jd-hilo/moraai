@@ -7,17 +7,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#ffffff" }}>
+    <div className="mora-app-shell" style={{ display: "flex", minHeight: "100dvh" }}>
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main
+        className="mora-main"
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          minHeight: "100vh",
+          minHeight: "100dvh",
           position: "relative",
-          backgroundColor: "#ffffff",
         }}
       >
         {/* Mobile hamburger — hidden on desktop via media query class */}
@@ -34,31 +34,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: 8,
-            border: "1px solid #e5e5e5",
-            backgroundColor: "#ffffff",
+            borderRadius: 999,
+            border: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-surface)",
             cursor: "pointer",
           }}
-          className="md-hidden-toggle"
+          className="md-hidden-toggle mora-mobile-menu"
         >
           <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
             <path
               d="M1 1H15M1 6H15M1 11H15"
-              stroke="#0d0d0d"
+              stroke="currentColor"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
           </svg>
         </button>
-
-        <style>{`
-          @media (min-width: 768px) {
-            .md-hidden-toggle { display: none !important; }
-          }
-          @media (min-width: 768px) {
-            main { margin-left: 260px; }
-          }
-        `}</style>
 
         {children}
       </main>
