@@ -52,7 +52,14 @@ const synthesisElement = document.querySelector<HTMLElement>("#synthesis")!;
 const synthesisToggle = document.querySelector<HTMLButtonElement>("#synthesis-toggle")!;
 const synthesisPanel = document.querySelector<HTMLElement>("#synthesis-panel")!;
 const displayModeToggle = document.querySelector<HTMLButtonElement>("#display-mode-toggle")!;
-const openInMoraButton = document.querySelector<HTMLButtonElement>("#open-in-mora")!;
+const headerAside = document.querySelector<HTMLElement>(".header-aside")!;
+const openInMoraButton = document.createElement("button");
+openInMoraButton.id = "open-in-mora";
+openInMoraButton.type = "button";
+openInMoraButton.className = "display-mode-toggle";
+openInMoraButton.setAttribute("aria-label", "Open this exact simulation in Mora");
+openInMoraButton.textContent = "Open in Mora";
+headerAside.insertBefore(openInMoraButton, displayModeToggle);
 const modeStatus = document.querySelector<HTMLElement>("#mode-status")!;
 
 type ReadingDestination = "fullscreen" | "inline" | "external";

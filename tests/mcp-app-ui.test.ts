@@ -39,16 +39,16 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
-  it("uses a wide desktop explorer and collapses safely for narrower hosts", async () => {
+  it("uses the proven wide path grid and collapses safely for narrower hosts", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain('class="explorer"');
-    expect(html).toContain("grid-template-columns: minmax(236px, .72fr) minmax(0, 1.8fr)");
-    expect(html).toContain("@media (max-width: 860px)");
-    expect(html).toContain("grid-template-columns: repeat(10, minmax(76px, 1fr))");
-    expect(html).toContain("overflow-x: auto");
+    expect(html).toContain("max-width: 1180px");
+    expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
+    expect(html).toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
+    expect(html).toContain("@media (max-width: 600px)");
+    expect(html).toContain(".path-detail { display: block; }");
   });
 });
