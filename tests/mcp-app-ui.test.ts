@@ -12,8 +12,8 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBeLessThanOrEqual(450_000);
-    expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(110_000);
+    expect(artifact.byteLength).toBeLessThanOrEqual(408_500);
+    expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
     expect(source).not.toMatch(/data:(?:font|image)\//);
     expect(source).not.toContain("Recoleta-Regular.otf");
     expect(source).not.toContain("mora-logo.png");
