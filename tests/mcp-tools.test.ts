@@ -207,7 +207,7 @@ describe("MCP tool surface", () => {
     expect(registerResource).toHaveBeenCalledTimes(1);
     const [name, uri, metadata, callback] = registerResource.mock.calls[0];
     expect(name).toBe("mora-simulation-results");
-    expect(uri).toBe("ui://mora/simulation-results-v10.html");
+    expect(uri).toBe("ui://mora/simulation-results-v11.html");
     expect(metadata).toMatchObject({
       title: "Mora simulation results",
       mimeType: "text/html;profile=mcp-app",
@@ -217,7 +217,7 @@ describe("MCP tool surface", () => {
     expect(resource).toMatchObject({
       contents: [
         {
-          uri: "ui://mora/simulation-results-v10.html",
+          uri: "ui://mora/simulation-results-v11.html",
           mimeType: "text/html;profile=mcp-app",
           _meta: {
             ui: {
@@ -303,10 +303,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v10.html",
+        resourceUri: "ui://mora/simulation-results-v11.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v10.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v11.html",
     });
   });
 
@@ -322,11 +322,9 @@ describe("MCP tool surface", () => {
     );
     expect(script).toContain("actions.append(synthesisToggle);");
     expect(html).not.toContain('id="open-in-mora"');
-    expect(script).toContain('openInMoraButton.id = "open-in-mora"');
-    expect(script).toContain('openInMoraButton.textContent = "Open in Mora"');
-    expect(script).toContain('"Open this exact simulation in Mora"');
     expect(script).toContain('app.openLink({ url: simulationUrl })');
-    expect(script).toContain('openInMoraButton.addEventListener("click"');
+    expect(script).toContain('if (await openSimulationInMora()) return "external"');
+    expect(script).not.toContain("openInMoraButton");
     expect(script).not.toContain("window.open");
     expect(script).not.toContain("const readButton");
     expect(script).not.toContain("View Mora synthesis");
