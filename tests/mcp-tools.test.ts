@@ -207,7 +207,7 @@ describe("MCP tool surface", () => {
     expect(registerResource).toHaveBeenCalledTimes(1);
     const [name, uri, metadata, callback] = registerResource.mock.calls[0];
     expect(name).toBe("mora-simulation-results");
-    expect(uri).toBe("ui://mora/simulation-results-v14.html");
+    expect(uri).toBe("ui://mora/simulation-results-v3.html");
     expect(metadata).toMatchObject({
       title: "Mora simulation results",
       mimeType: "text/html;profile=mcp-app",
@@ -217,7 +217,7 @@ describe("MCP tool surface", () => {
     expect(resource).toMatchObject({
       contents: [
         {
-          uri: "ui://mora/simulation-results-v14.html",
+          uri: "ui://mora/simulation-results-v3.html",
           mimeType: "text/html;profile=mcp-app",
           _meta: {
             ui: {
@@ -303,10 +303,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v14.html",
+        resourceUri: "ui://mora/simulation-results-v3.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v14.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v3.html",
     });
   });
 
@@ -343,16 +343,20 @@ describe("MCP tool surface", () => {
     expect(html).not.toContain("<img");
   });
 
-  it("restores the proven host-compatible typography and accent contract", async () => {
+  it("uses the mobile app's editorial hierarchy and peach CTA gradient without a font payload", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("fonts.googleapis.com/css2?family=DM+Sans");
-    expect(html).toContain("--accent: #7268c7");
+    expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
+    expect(html).toContain("--accent: #e87a7f");
+    expect(html).toContain("--accent-mid: #e4b5d3");
+    expect(html).toContain("--accent-warm: #e4b8a6");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");
+    expect(html).not.toContain("DM Sans");
+    expect(html).not.toContain("#7268c7");
   });
 
   it("continues an accidental status check into coaching instead of a tool tour", async () => {
