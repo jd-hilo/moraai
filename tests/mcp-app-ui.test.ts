@@ -13,14 +13,16 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(408_973);
+    expect(artifact.byteLength).toBe(409_150);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "dbe919733d4e90da96db1a6675ded5ab37ee64eeb19e048b2f900dfe9ae82fe0"
+      "77bac8148ed1b46f4292c039e5cf2c8b3fda75731f1a2c82e65ed0927b30401f"
     );
     expect(source).not.toMatch(/data:(?:font|image)\//);
     expect(source).not.toContain("Recoleta-Regular.otf");
     expect(source).not.toContain("mora-logo.png");
+    expect(source).not.toContain("fonts.googleapis.com");
+    expect(source).not.toContain("fonts.gstatic.com");
   });
 
   it("keeps every required boot selector present with a meaningful fallback", async () => {
@@ -45,7 +47,7 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
-  it("keeps the authored body on the exact known-good pre-branding boot structure", async () => {
+  it("keeps the authored body on the production-proven boot structure", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
