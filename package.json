@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run build:mcp-apps && next build",
-    "build:mcp-apps": "vite build --config mcp-apps/vite.config.ts && node scripts/optimize-mcp-app-bundle.mjs && node scripts/verify-mcp-app-bundle.mjs",
+    "build:mcp-apps": "vite build --config mcp-apps/vite.config.ts && node scripts/verify-mcp-app-bundle.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
