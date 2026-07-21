@@ -35,7 +35,9 @@ describe("MCP App host-safety regression guards", () => {
       if (selector.startsWith(".")) expect(html).toContain(`class="${selector.slice(1)}`);
     }
     expect(html).toContain("Loading your possible futures");
-    expect(html).toContain("<noscript>");
+    expect(html).toContain('class="state-help"');
+    expect(html).not.toContain("<noscript>");
+    expect(html).not.toMatch(/<p[^>]+style=/);
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
