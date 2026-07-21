@@ -97,7 +97,6 @@
         background: #eeeeef;
       }
       .state-line.short { width: 56%; }
-      .state-help { margin: 2px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.5; }
       .error-state { grid-template-columns: 38px minmax(0, 1fr); align-items: start; align-content: center; }
       .error-mark { width: 36px; height: 36px; display: grid; place-items: center; color: var(--danger); background: var(--danger-soft); border-radius: 50%; }
       .error-copy h2 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -138,7 +137,7 @@
       }
       .display-mode-toggle:hover { background: var(--surface-subtle); }
 
-      .content { max-width: 1180px; margin: 0 auto; padding: 22px 28px 30px; }
+      .content { padding: 22px 28px 30px; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 11px; }
       .section-label { margin: 0; color: var(--text); font-size: 12px; font-weight: 600; }
       .section-hint { margin: 0; color: var(--quiet); font-size: 10px; }
@@ -267,7 +266,6 @@
         <div class="state-copy" aria-label="Loading simulation results">
           <div class="state-line"></div>
           <div class="state-line short"></div>
-          <p class="state-help">Loading your possible futures. Ask Claude to retry if this view does not finish.</p>
         </div>
       </section>
       <section id="error" class="state error-state" role="alert" hidden></section>

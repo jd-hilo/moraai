@@ -43,7 +43,8 @@ for (const required of [
   'id="results"',
   'id="path-list"',
   'id="path-detail"',
-  "Loading your possible futures",
+  'aria-label="Loading simulation results"',
+  "Mora simulation",
 ]) {
   if (!source.includes(required)) failures.push(`bundle is missing required boot contract: ${required}`);
 }
