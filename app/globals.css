@@ -86,6 +86,7 @@ select {
 @media (min-width: 768px) {
   .mora-main {
     margin-left: 272px;
+    width: calc(100% - 272px);
   }
 
   .md-hidden-toggle {
