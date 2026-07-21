@@ -207,7 +207,7 @@ describe("MCP tool surface", () => {
     expect(registerResource).toHaveBeenCalledTimes(1);
     const [name, uri, metadata, callback] = registerResource.mock.calls[0];
     expect(name).toBe("mora-simulation-results");
-    expect(uri).toBe("ui://mora/simulation-results-v9.html");
+    expect(uri).toBe("ui://mora/simulation-results-v10.html");
     expect(metadata).toMatchObject({
       title: "Mora simulation results",
       mimeType: "text/html;profile=mcp-app",
@@ -217,12 +217,16 @@ describe("MCP tool surface", () => {
     expect(resource).toMatchObject({
       contents: [
         {
-          uri: "ui://mora/simulation-results-v9.html",
+          uri: "ui://mora/simulation-results-v10.html",
           mimeType: "text/html;profile=mcp-app",
           _meta: {
             ui: {
               csp: {
-                resourceDomains: ["https://www.mymora.app"],
+                resourceDomains: [
+                  "https://www.mymora.app",
+                  "https://fonts.googleapis.com",
+                  "https://fonts.gstatic.com",
+                ],
               },
             },
           },
@@ -299,10 +303,10 @@ describe("MCP tool surface", () => {
     }
     expect(tools.get("simulate_future")?.config._meta).toEqual({
       ui: {
-        resourceUri: "ui://mora/simulation-results-v9.html",
+        resourceUri: "ui://mora/simulation-results-v10.html",
         visibility: ["model", "app"],
       },
-      "ui/resourceUri": "ui://mora/simulation-results-v9.html",
+      "ui/resourceUri": "ui://mora/simulation-results-v10.html",
     });
   });
 
@@ -317,9 +321,10 @@ describe("MCP tool surface", () => {
       'aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>'
     );
     expect(script).toContain("actions.append(synthesisToggle);");
-    expect(html.match(/id="open-in-mora"/g) ?? []).toHaveLength(1);
-    expect(html).toContain("Open in Mora");
-    expect(html).toContain('aria-label="Open this exact simulation in Mora"');
+    expect(html).not.toContain('id="open-in-mora"');
+    expect(script).toContain('openInMoraButton.id = "open-in-mora"');
+    expect(script).toContain('openInMoraButton.textContent = "Open in Mora"');
+    expect(script).toContain('"Open this exact simulation in Mora"');
     expect(script).toContain('app.openLink({ url: simulationUrl })');
     expect(script).toContain('openInMoraButton.addEventListener("click"');
     expect(script).not.toContain("window.open");
@@ -335,7 +340,7 @@ describe("MCP tool surface", () => {
     );
 
     expect(html.match(/class="brand-mark"/g) ?? []).toHaveLength(2);
-    expect(html.match(/class="brand-word">Mora/g) ?? []).toHaveLength(2);
+    expect(html.match(/<span>Mora simulation<\/span>/g) ?? []).toHaveLength(2);
     expect(html).not.toContain("mora-logo.png");
     expect(html).not.toContain("<img");
   });
