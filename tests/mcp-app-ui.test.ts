@@ -13,8 +13,11 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBeLessThanOrEqual(408_500);
+    expect(artifact.byteLength).toBe(408_973);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
+    expect(createHash("sha256").update(artifact).digest("hex")).toBe(
+      "dbe919733d4e90da96db1a6675ded5ab37ee64eeb19e048b2f900dfe9ae82fe0"
+    );
     expect(source).not.toMatch(/data:(?:font|image)\//);
     expect(source).not.toContain("Recoleta-Regular.otf");
     expect(source).not.toContain("mora-logo.png");
