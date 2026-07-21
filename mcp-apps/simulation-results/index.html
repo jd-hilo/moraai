@@ -97,6 +97,7 @@
         background: #eeeeef;
       }
       .state-line.short { width: 56%; }
+      .state-help { margin: 2px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.5; }
       .error-state { grid-template-columns: 38px minmax(0, 1fr); align-items: start; align-content: center; }
       .error-mark { width: 36px; height: 36px; display: grid; place-items: center; color: var(--danger); background: var(--danger-soft); border-radius: 50%; }
       .error-copy h2 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -266,9 +267,8 @@
         <div class="state-copy" aria-label="Loading simulation results">
           <div class="state-line"></div>
           <div class="state-line short"></div>
-          <p style="margin: 2px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.5;">Loading your possible futures. If this view does not finish, ask Claude to run the simulation again.</p>
+          <p class="state-help">Loading your possible futures. Ask Claude to retry if this view does not finish.</p>
         </div>
-        <noscript>JavaScript is required to display the interactive result. Ask Claude to summarize the simulation or open it in Mora.</noscript>
       </section>
       <section id="error" class="state error-state" role="alert" hidden></section>
       <section id="results" hidden>
