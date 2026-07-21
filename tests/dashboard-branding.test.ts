@@ -25,6 +25,7 @@ describe("Unreal design-system mapping", () => {
     expect(layout).toContain('minHeight: "100dvh"');
     expect(layout).toContain('className="mora-main"');
     expect(css).toContain("@media (min-width: 768px)");
+    expect(css).toContain("min-width: 0");
     expect(css).toContain("margin-left: 272px");
     expect(css).toContain("width: calc(100% - 272px)");
   });
@@ -36,6 +37,7 @@ describe("Unreal design-system mapping", () => {
     );
 
     expect(css).toContain("width: min(100%, 1180px)");
+    expect(css).toContain("max-width: 100%");
     expect(css).toContain("font-family: var(--font-display)");
     expect(css).toContain("background: var(--gradient-peach)");
     expect(css).toContain("@media (max-width: 767px)");
