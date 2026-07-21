@@ -92,7 +92,13 @@ export function KnowledgeGraph() {
   const [styles, setStyles]               = useState<Record<string, string>>(DEFAULT_STYLES);
   const [customizerOpen, setCustomizerOpen] = useState(false);
 
-  useEffect(() => { setStyles(loadStyles()); }, []);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) setStyles(loadStyles());
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     fetch("/api/vault/graph")
@@ -206,7 +212,7 @@ export function KnowledgeGraph() {
       .attr("text-anchor", "middle")
       .attr("dy", d => Math.max(14, Math.min(34, 14 + d.linkCount * 3)) + 17)
       .attr("font-size", "11px")
-      .attr("font-family", "'DM Sans', -apple-system, sans-serif")
+      .attr("font-family", "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif")
       .attr("fill", "#777")
       .attr("pointer-events", "none");
 

@@ -5,14 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mora simulation results</title>
     <style>
-      @font-face {
-        font-family: "Recoleta";
-        src: url("../../public/fonts/Recoleta-Regular.otf") format("opentype");
-        font-display: swap;
-        font-style: normal;
-        font-weight: 400;
-      }
-
       :root {
         color-scheme: light;
         font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -23,12 +15,14 @@
         --muted: rgba(22, 21, 20, .68);
         --quiet: rgba(22, 21, 20, .45);
         --line: rgba(22, 21, 20, .09);
-        --accent: #d9787e;
-        --accent-soft: #f8eceb;
+        --accent: #e87a7f;
+        --accent-mid: #e4b5d3;
+        --accent-warm: #e4b8a6;
+        --accent-soft: #fbefed;
         --ink: #1a1918;
         --danger: #9c3a35;
         --danger-soft: #fbeeed;
-        --display: "Recoleta", Georgia, serif;
+        --display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
       }
 
       * { box-sizing: border-box; }
@@ -77,11 +71,33 @@
         letter-spacing: -.01em;
       }
 
-      .brand-logo {
-        width: auto;
-        height: 22px;
+      .brand-mark {
+        position: relative;
+        width: 20px;
+        height: 20px;
         flex: 0 0 auto;
         display: block;
+        overflow: hidden;
+        background: linear-gradient(135deg, var(--accent), var(--accent-mid) 54%, var(--accent-warm));
+        border: 1px solid rgba(22, 21, 20, .08);
+        border-radius: 50%;
+      }
+      .brand-mark::after {
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        width: 7px;
+        height: 7px;
+        background: rgba(255, 255, 255, .7);
+        border-radius: 50%;
+        content: "";
+      }
+      .brand-word {
+        color: var(--text);
+        font-family: var(--display);
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -.025em;
       }
 
       .state-copy { display: grid; gap: 10px; max-width: 480px; }
@@ -148,10 +164,10 @@
         color: #fff;
         font-size: 12px;
         font-weight: 700;
-        background: linear-gradient(135deg, #8f85df 0%, #c6a6f0 50%, #efb6ef 100%);
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 52%, var(--accent-warm) 100%);
         border: 1px solid rgba(255, 255, 255, .18);
         border-radius: 999px;
-        box-shadow: 0 14px 36px rgba(143, 133, 223, .4), inset 0 1px 0 rgba(255, 255, 255, .3);
+        box-shadow: 0 14px 30px rgba(188, 106, 109, .18), inset 0 1px 0 rgba(255, 255, 255, .42);
         cursor: pointer;
         transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease, border-color 180ms ease;
       }
@@ -170,18 +186,24 @@
       }
       .display-mode-toggle:hover { background: var(--surface-subtle); }
 
-      .content { padding: 24px 32px 34px; }
+      .content { max-width: 1440px; margin: 0 auto; padding: 24px 32px 34px; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
       .section-label { margin: 0; color: var(--text); font-family: var(--display); font-size: 18px; }
       .section-hint { margin: 0; color: var(--quiet); font-size: 10px; }
 
+      .explorer {
+        display: grid;
+        grid-template-columns: minmax(236px, .72fr) minmax(0, 1.8fr);
+        gap: 18px;
+        align-items: start;
+      }
+
       .path-list {
         position: relative;
         display: grid;
-        grid-template-columns: repeat(10, minmax(56px, 1fr));
-        gap: 4px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px;
         padding: 10px;
-        overflow-x: auto;
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 18px;
@@ -193,14 +215,13 @@
       .path-row {
         min-width: 0;
         display: grid;
-        grid-template-columns: 1fr;
-        gap: 3px;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 5px 8px;
         align-items: center;
-        justify-items: center;
-        min-height: 50px;
-        padding: 7px 6px;
+        min-height: 62px;
+        padding: 9px 10px;
         color: var(--muted);
-        text-align: center;
+        text-align: left;
         background: transparent;
         border: 1px solid transparent;
         border-radius: 12px;
@@ -214,10 +235,10 @@
       .path-row[aria-selected="true"] { color: #fff; background: var(--ink); border-color: var(--ink); }
       .path-number, .path-probability { font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
       .path-number { color: currentColor; }
-      .path-copy { display: none; min-width: 0; }
+      .path-copy { display: block; min-width: 0; }
       .path-copy strong { display: block; overflow: hidden; font-size: 11px; font-weight: 600; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
       .path-copy small { display: none; }
-      .path-probability { color: currentColor; font-size: 9px; opacity: .62; }
+      .path-probability { grid-column: 2; color: currentColor; font-size: 9px; opacity: .62; }
       .path-row[aria-selected="true"] .path-probability { opacity: .72; }
 
       .path-detail {
@@ -226,8 +247,9 @@
         grid-template-columns: minmax(0, 1fr);
         row-gap: 0;
         align-items: start;
-        max-width: 920px;
-        margin-top: 18px;
+        max-width: none;
+        min-height: 100%;
+        margin-top: 0;
         padding: 26px 28px 24px;
         background: var(--surface);
         border: 1px solid var(--line);
@@ -253,7 +275,7 @@
 
       .toggle { min-height: 38px; padding: 0 16px; color: #fff; font-size: 12px; font-weight: 700; background: var(--ink); border: 1px solid var(--ink); border-radius: 999px; cursor: pointer; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease; }
       .toggle:hover { background: #34312f; }
-      .synthesis { max-width: 920px; margin-top: 18px; padding: 26px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; }
+      .synthesis { margin-top: 18px; padding: 26px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; }
       .synthesis h2 { margin: 0 0 18px; font-family: var(--display); font-size: 26px; font-weight: 400; letter-spacing: -.02em; }
       .synthesis-body { max-width: 780px; color: #302e2c; font-size: 13px; line-height: 1.68; }
       .synthesis-intro p { margin: 0 0 11px; }
@@ -298,13 +320,25 @@
         .path-row, .toggle, .display-mode-toggle, .open-in-mora { transition: none; }
       }
 
+      @media (max-width: 860px) {
+        .explorer { grid-template-columns: minmax(0, 1fr); }
+        .path-list {
+          grid-template-columns: repeat(10, minmax(76px, 1fr));
+          overflow-x: auto;
+        }
+        .path-row { grid-template-columns: 1fr; justify-items: center; min-height: 54px; padding: 7px 6px; text-align: center; }
+        .path-copy { display: none; }
+        .path-probability { grid-column: 1; }
+        .path-detail { min-height: 0; }
+      }
+
       @media (max-width: 720px) {
         .state, .header, .content { padding-right: 18px; padding-left: 18px; }
         .header { grid-template-columns: 1fr; gap: 16px; }
         .header-aside { flex-direction: row-reverse; align-items: center; justify-content: flex-end; }
         .count { margin-right: auto; }
         .section-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
-        .path-list { grid-template-columns: repeat(10, 58px); margin-right: -18px; padding-right: 18px; border-right: 0; border-radius: 18px 0 0 18px; }
+        .path-list { grid-template-columns: repeat(10, 62px); margin-right: -18px; padding-right: 18px; border-right: 0; border-radius: 18px 0 0 18px; }
         .path-detail, .synthesis { padding-right: 20px; padding-left: 20px; border-radius: 20px; }
         .detail-heading { grid-template-columns: 1fr; gap: 10px; }
         .probability { justify-self: start; }
@@ -321,17 +355,19 @@
   <body>
     <main class="shell">
       <section id="loading" class="state" aria-live="polite">
-        <p class="state-brand"><img class="brand-logo" src="../../public/mora-logo.png" alt="Mora" width="1000" height="300" /><span>simulation</span></p>
+        <p class="state-brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Mora</span><span>simulation</span></p>
         <div class="state-copy" aria-label="Loading simulation results">
           <div class="state-line"></div>
           <div class="state-line short"></div>
+          <p style="margin: 2px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.5;">Loading your possible futures. If this view does not finish, ask Claude to run the simulation again.</p>
         </div>
+        <noscript>JavaScript is required to display the interactive result. Ask Claude to summarize the simulation or open it in Mora.</noscript>
       </section>
       <section id="error" class="state error-state" role="alert" hidden></section>
       <section id="results" hidden>
         <header class="header">
           <div class="header-copy">
-            <p class="brand-line"><img class="brand-logo" src="../../public/mora-logo.png" alt="Mora" width="1000" height="300" /><span>simulation</span></p>
+            <p class="brand-line"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Mora</span><span>simulation</span></p>
             <p class="eyebrow">Path explorer</p>
             <h1 id="title">Simulation results</h1>
             <p id="meta" class="meta"></p>
@@ -352,8 +388,10 @@
             <p class="section-label">Possible paths</p>
             <p class="section-hint">Choose one to explore</p>
           </div>
-          <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
-          <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
+          <div class="explorer">
+            <nav id="path-list" class="path-list" role="tablist" aria-label="Simulation paths"></nav>
+            <article id="path-detail" class="path-detail" role="tabpanel" aria-live="polite"></article>
+          </div>
           <button id="synthesis-toggle" class="toggle" type="button" aria-expanded="false" aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>
           <section id="synthesis-panel" class="synthesis" hidden>
             <h2>Mora synthesis</h2>

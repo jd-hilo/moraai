@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { MessageBubble } from "./message-bubble";
-import { TypingIndicator } from "./typing-indicator";
 import { ChatInput } from "./chat-input";
 import type { MemoryUpdate } from "@/lib/vault/types";
 
@@ -35,7 +33,6 @@ function getGreeting(firstName?: string | null): string {
 
 export function ChatInterface({ conversationId, initialMode }: ChatInterfaceProps) {
   const searchParams = useSearchParams();
-  const { user } = useUser();
   const mode = initialMode || searchParams.get("mode") || "chat";
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -258,9 +255,9 @@ export function ChatInterface({ conversationId, initialMode }: ChatInterfaceProp
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        height: "100dvh",
         maxWidth: "100%",
-        backgroundColor: "#ffffff",
+        backgroundColor: "var(--color-bg)",
       }}
     >
       {/* Messages area */}
@@ -279,43 +276,65 @@ export function ChatInterface({ conversationId, initialMode }: ChatInterfaceProp
         {isEmpty && !isStreaming && (
           <div
             style={{
-              textAlign: "center",
-              padding: "40px 24px 32px",
-              maxWidth: "768px",
+              textAlign: "left",
+              padding: "48px 40px 40px",
+              maxWidth: "860px",
               margin: "0 auto",
               width: "100%",
               position: "relative",
             }}
           >
-            {/* Subtle purple-pink radial hint */}
+            {/* Lightweight Unreal-inspired peach atmosphere. */}
             <div
               aria-hidden
               style={{
                 position: "absolute",
                 top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 600,
-                height: 320,
+                right: 20,
+                transform: "translateY(-50%)",
+                width: 360,
+                height: 260,
                 background:
-                  "radial-gradient(ellipse 65% 60% at 50% 50%, rgba(198,166,240,0.55) 0%, rgba(255,198,225,0.35) 45%, transparent 75%)",
-                filter: "blur(40px)",
+                  "radial-gradient(ellipse 65% 60% at 50% 50%, rgba(228,181,211,0.34) 0%, rgba(228,184,166,0.22) 48%, transparent 76%)",
+                filter: "blur(32px)",
                 pointerEvents: "none",
               }}
             />
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 18,
+                color: "var(--color-text-muted)",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                position: "relative",
+              }}
+            >
+              <span aria-hidden style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--gradient-peach)" }} />
+              Mora
+            </div>
             <h2
               style={{
-                fontFamily: "'Recoleta', 'DM Sans', serif",
-                fontSize: "32px",
+                fontFamily: "var(--font-display)",
+                fontSize: "clamp(36px, 5vw, 58px)",
                 fontWeight: 400,
-                color: "#0d0d0d",
-                marginBottom: 0,
-                letterSpacing: "-0.025em",
+                color: "var(--color-text-primary)",
+                marginBottom: 12,
+                maxWidth: 620,
+                lineHeight: 1.04,
+                letterSpacing: "-0.04em",
                 position: "relative",
               }}
             >
               {getGreeting()}
             </h2>
+            <p style={{ position: "relative", maxWidth: 520, color: "var(--color-text-secondary)", fontSize: 15, lineHeight: 1.65 }}>
+              Ask about a decision, revisit a memory, or explore how one choice could change what comes next.
+            </p>
           </div>
         )}
 

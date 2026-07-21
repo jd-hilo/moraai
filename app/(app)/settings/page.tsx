@@ -66,17 +66,18 @@ export default function SettingsPage() {
         style={{
           flex: 1,
           padding: "24px",
-          maxWidth: "600px",
+          maxWidth: "720px",
           margin: "0 auto",
           width: "100%",
         }}
       >
         <h1
           style={{
-            fontSize: "24px",
-            fontWeight: 600,
-            color: "#1a1a1a",
-            letterSpacing: "-0.02em",
+            fontFamily: "var(--font-display)",
+            fontSize: "40px",
+            fontWeight: 400,
+            color: "var(--color-text-primary)",
+            letterSpacing: "-0.035em",
             marginBottom: "40px",
             paddingTop: "16px",
           }}
@@ -135,8 +136,8 @@ export default function SettingsPage() {
           <SectionLabel danger>Danger zone</SectionLabel>
           <div
             style={{
-              backgroundColor: "#fff",
-              borderRadius: "12px",
+              backgroundColor: "var(--color-surface)",
+              borderRadius: "24px",
               border: "1px solid rgba(220,38,38,0.2)",
               padding: "20px",
             }}
@@ -177,14 +178,30 @@ export default function SettingsPage() {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "#fff",
-              borderRadius: 20,
+              borderRadius: 28,
               width: "100%",
               maxWidth: 420,
               padding: "28px",
               boxShadow: "0 32px 80px rgba(0,0,0,0.18)",
             }}
           >
-            <div style={{ fontSize: 22, marginBottom: 8 }}>⚠️</div>
+            <div
+              aria-hidden="true"
+              style={{
+                width: 34,
+                height: 34,
+                display: "grid",
+                placeItems: "center",
+                marginBottom: 12,
+                color: "#9c3a35",
+                background: "#fbeeed",
+                borderRadius: "50%",
+                fontSize: 16,
+                fontWeight: 700,
+              }}
+            >
+              !
+            </div>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1a1a1a", margin: "0 0 8px" }}>
               Delete your account?
             </h2>
@@ -207,7 +224,7 @@ export default function SettingsPage() {
                 borderRadius: 8,
                 border: "1px solid rgba(0,0,0,0.12)",
                 fontSize: 14,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-ui)",
                 outline: "none",
                 marginBottom: 16,
                 boxSizing: "border-box",
@@ -251,7 +268,7 @@ function SectionLabel({ children, danger }: { children: React.ReactNode; danger?
       style={{
         fontSize: "14px",
         fontWeight: 500,
-        color: danger ? "#dc2626" : "#888",
+        color: danger ? "#9c3a35" : "var(--color-text-muted)",
         textTransform: "uppercase",
         letterSpacing: "0.05em",
         marginBottom: "12px",
@@ -266,10 +283,11 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        backgroundColor: "#fff",
-        borderRadius: "12px",
-        border: "1px solid rgba(0,0,0,0.08)",
-        padding: "20px",
+        backgroundColor: "var(--color-surface)",
+        borderRadius: "24px",
+        border: "1px solid var(--color-border)",
+        padding: "24px",
+        boxShadow: "0 14px 34px rgba(43,34,27,0.035)",
       }}
     >
       {children}
@@ -296,7 +314,7 @@ const outlineBtn: React.CSSProperties = {
   fontWeight: 500,
   color: "#1a1a1a",
   cursor: "pointer",
-  fontFamily: "'DM Sans', sans-serif",
+  fontFamily: "var(--font-ui)",
   whiteSpace: "nowrap",
 };
 
@@ -310,6 +328,6 @@ const dangerBtn: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 500,
   cursor: "pointer",
-  fontFamily: "'DM Sans', sans-serif",
+  fontFamily: "var(--font-ui)",
   whiteSpace: "nowrap",
 };
