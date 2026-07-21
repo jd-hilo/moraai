@@ -26,6 +26,7 @@ describe("Unreal design-system mapping", () => {
     expect(layout).toContain('className="mora-main"');
     expect(css).toContain("@media (min-width: 768px)");
     expect(css).toContain("margin-left: 272px");
+    expect(css).toContain("width: calc(100% - 272px)");
   });
 
   it("gives the simulation dashboard a wide canvas with a mobile fallback", async () => {
