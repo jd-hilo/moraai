@@ -331,16 +331,15 @@ describe("MCP tool surface", () => {
     expect(script).not.toContain("Hide Mora synthesis");
   });
 
-  it("uses a host-safe CSS Mora mark without embedding image assets", async () => {
+  it("uses the optimized canonical Mora logo in both brand lines", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html.match(/class="brand-mark"/g) ?? []).toHaveLength(2);
-    expect(html.match(/<span>Mora simulation<\/span>/g) ?? []).toHaveLength(2);
-    expect(html).not.toContain("mora-logo.png");
-    expect(html).not.toContain("<img");
+    expect(html.match(/<img class="brand-logo" src="\.\/mora-logo\.png" alt="Mora" width="113" height="34" \/>/g) ?? []).toHaveLength(2);
+    expect(html.match(/<span>simulation<\/span>/g) ?? []).toHaveLength(2);
+    expect(html).not.toContain('class="brand-mark"');
   });
 
   it("uses Unreal's lightweight editorial tokens without external asset payloads", async () => {
@@ -354,7 +353,7 @@ describe("MCP tool surface", () => {
     expect(html).toContain("--accent-mid: #e4b5d3");
     expect(html).toContain("--accent-warm: #e4b8a6");
     expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
-    expect(html).toContain("linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm))");
+    expect(html).not.toContain("linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm))");
     expect(html).not.toContain("fonts.googleapis.com");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");
