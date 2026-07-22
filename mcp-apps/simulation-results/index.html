@@ -69,25 +69,11 @@
         letter-spacing: .055em;
       }
 
-      .brand-mark {
-        position: relative;
-        width: 17px;
+      .brand-logo {
+        display: block;
+        width: auto;
         height: 17px;
         flex: 0 0 auto;
-        overflow: hidden;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm));
-      }
-
-      .brand-mark::after {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, .72);
-        content: "";
       }
 
       .state-copy { display: grid; gap: 10px; max-width: 560px; }
@@ -283,7 +269,7 @@
   <body>
     <main class="shell">
       <section id="loading" class="state" aria-live="polite">
-        <p class="state-brand"><span class="brand-mark" aria-hidden="true"></span><span>Mora simulation</span></p>
+        <p class="state-brand"><img class="brand-logo" src="./mora-logo.png" alt="Mora" width="113" height="34" /><span>simulation</span></p>
         <div class="state-copy" aria-label="Loading simulation results">
           <div class="state-line"></div>
           <div class="state-line short"></div>
@@ -293,7 +279,7 @@
       <section id="results" hidden>
         <header class="header">
           <div class="header-copy">
-            <p class="brand-line"><span class="brand-mark" aria-hidden="true"></span><span>Mora simulation</span></p>
+            <p class="brand-line"><img class="brand-logo" src="./mora-logo.png" alt="Mora" width="113" height="34" /><span>simulation</span></p>
             <p class="eyebrow">Path explorer</p>
             <h1 id="title">Simulation results</h1>
             <p id="meta" class="meta"></p>

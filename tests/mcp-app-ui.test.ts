@@ -13,16 +13,35 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(409_150);
-    expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
+    expect(artifact.byteLength).toBe(418_076);
+    expect(artifact.byteLength - 409_150).toBeLessThanOrEqual(9_000);
+    expect(gzipSync(artifact).byteLength - 99_264).toBeLessThanOrEqual(5_500);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "77bac8148ed1b46f4292c039e5cf2c8b3fda75731f1a2c82e65ed0927b30401f"
+      "a56d152bab357992e04b300a527bfc42ddee5cd4649ef340b1b814003a1d47bb"
     );
-    expect(source).not.toMatch(/data:(?:font|image)\//);
+    expect(source).not.toContain("data:font/");
     expect(source).not.toContain("Recoleta-Regular.otf");
-    expect(source).not.toContain("mora-logo.png");
     expect(source).not.toContain("fonts.googleapis.com");
     expect(source).not.toContain("fonts.gstatic.com");
+  });
+
+  it("bundles only the reviewed two-density canonical Mora logo", async () => {
+    const [artifact, logo] = await Promise.all([
+      readFile(path.join(root, "mcp-apps/simulation-results/dist/index.html"), "utf8"),
+      readFile(path.join(root, "mcp-apps/simulation-results/mora-logo.png")),
+    ]);
+    const expectedDataUri = `data:image/png;base64,${logo.toString("base64")}`;
+    const imageDataUris = artifact.match(
+      /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g
+    ) ?? [];
+
+    expect(logo.byteLength).toBe(3_471);
+    expect(logo.readUInt32BE(16)).toBe(113);
+    expect(logo.readUInt32BE(20)).toBe(34);
+    expect(createHash("sha256").update(logo).digest("hex")).toBe(
+      "e6416bdf6e3a87506066b68878e787b7e95b807cbf21dd66880c9cd02e889024"
+    );
+    expect(imageDataUris).toEqual([expectedDataUri, expectedDataUri]);
   });
 
   it("keeps every required boot selector present with a meaningful fallback", async () => {
@@ -41,7 +60,8 @@ describe("MCP App host-safety regression guards", () => {
       if (selector.startsWith(".")) expect(html).toContain(`class="${selector.slice(1)}`);
     }
     expect(html).toContain('aria-label="Loading simulation results"');
-    expect(html).toContain("Mora simulation");
+    expect(html.match(/<img class="brand-logo"[^>]+alt="Mora"[^>]*>/g)).toHaveLength(2);
+    expect(html.match(/<span>simulation<\/span>/g)).toHaveLength(2);
     expect(html).not.toContain("<noscript>");
     expect(html).not.toMatch(/<p[^>]+style=/);
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
@@ -55,7 +75,7 @@ describe("MCP App host-safety regression guards", () => {
     const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
 
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "2ef4d30e51b6c112c6ef354f7cbd378d384bb3c566008e969d5b185240748459"
+      "feea807f42fe52ea856bc18246168640f7b92765ac654a1ea6b0098e0933b9c4"
     );
   });
 
@@ -72,5 +92,7 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
     expect(html).toContain("@media (max-width: 600px)");
     expect(html).toContain(".path-detail { display: block; }");
+    expect(html).toContain(".brand-logo {");
+    expect(html).toContain("height: 17px;");
   });
 });
