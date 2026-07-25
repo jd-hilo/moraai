@@ -243,11 +243,11 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        margin-top: 18px;
-        padding: 29px 2px 4px;
+        margin-top: 0;
+        padding: 20px 2px 4px;
         border-top: 1px solid var(--line);
       }
-      .detail-heading { display: grid; gap: 14px; }
+      .detail-heading { display: grid; gap: 8px; }
       .detail-topline {
         min-height: 40px;
         display: flex;
@@ -261,12 +261,24 @@
         display: -webkit-box;
         overflow: hidden;
         max-width: 690px;
-        min-height: 2.2em;
+        min-height: 1.1em;
         margin: 0;
         font-size: clamp(28px, 4.2vw, 38px);
         font-weight: 400;
         line-height: 1.1;
         letter-spacing: -.035em;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .path-summary {
+        display: -webkit-box;
+        overflow: hidden;
+        max-width: 62ch;
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        letter-spacing: -.005em;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
       }
@@ -337,6 +349,7 @@
         overflow: visible;
         min-height: 0;
       }
+      html[data-display-mode="fullscreen"] .path-summary { display: none; }
       html[data-display-mode="fullscreen"] .detail-topline { align-items: flex-start; }
       html[data-display-mode="fullscreen"] .read-path { display: none; }
 
@@ -359,7 +372,7 @@
         .header-aside { justify-content: flex-start; }
         h1 { min-height: 2.28em; font-size: clamp(28px, 9vw, 36px); line-height: 1.14; }
         .path-row { flex-basis: min(74vw, 230px); }
-        .path-detail { height: 236px; padding-top: 26px; }
+        .path-detail { height: 236px; padding-top: 20px; }
         .detail-heading { gap: 12px; }
         .detail-topline { align-items: flex-start; }
         .detail-aside { flex-wrap: wrap; gap: 10px; }
