@@ -13,10 +13,10 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(434_765);
+    expect(artifact.byteLength).toBe(435_772);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "d4c880403a0ff4654f5233ebf79e01e458047e45b7a68b42885e456b6d08a1b9"
+      "d86b9a5fa6492c0456853a3fd18726eb9f433963a0399349530e8351bbfbb0ff"
     );
     const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
     expect(new Set(imageDataUrls).size).toBe(1);
@@ -28,6 +28,7 @@ describe("MCP App host-safety regression guards", () => {
     expect(source).not.toContain("mora-logo.png");
     expect(source).not.toContain("fonts.googleapis.com");
     expect(source).not.toContain("fonts.gstatic.com");
+    expect(source).not.toContain("data:font/");
   });
 
   it("keeps every required boot selector present with a meaningful fallback", async () => {
@@ -61,22 +62,26 @@ describe("MCP App host-safety regression guards", () => {
     const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
 
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "1f5d1325059801e30781f2773a72cc888b69134642779372f7864ad573c09c03"
+      "cc150b3ae9952784908505a6fd146eccbe575268079a5d2d6c8180c43edcbd32"
     );
   });
 
-  it("keeps a calm two-row path flow and collapses safely for smaller hosts", async () => {
+  it("keeps a calm horizontal path flow and a composer-safe reading view", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("max-width: 980px");
+    expect(html).toContain("max-width: 1040px");
     expect(html).not.toContain("explorer-grid");
-    expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
-    expect(html).not.toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
+    expect(html).toContain("flex: 0 0 clamp(174px, 29vw, 226px)");
+    expect(html).not.toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
+    expect(html).toContain("height: 222px");
+    expect(html).not.toContain('class="premise"');
+    expect(html).not.toContain('id="synthesis-panel"');
+    expect(html).toContain("padding-bottom: max(260px, calc(var(--host-safe-bottom) + env(safe-area-inset-bottom) + 220px))");
     expect(html).toContain("@media (max-width: 560px)");
     expect(html).toContain(".header-main { grid-template-columns: 1fr; gap: 14px; }");
-    expect(html).toContain('.narrative[data-expanded="true"] { display: block; }');
+    expect(html).toContain('html[data-display-mode="fullscreen"] .path-browser { display: none; }');
   });
 });
