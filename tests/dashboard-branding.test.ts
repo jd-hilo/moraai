@@ -4,30 +4,28 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 
-describe("Unreal design-system mapping", () => {
-  it("defines the shared Mora dashboard typography and color tokens", async () => {
+describe("Mora web-app presentation", () => {
+  it("restores the original Mora chat typography and color tokens", async () => {
     const css = await readFile(path.join(root, "app/globals.css"), "utf8");
 
-    expect(css).toContain("--color-bg: #fafafa");
-    expect(css).toContain("--color-surface: #ffffff");
-    expect(css).toContain("--color-text-secondary: rgba(22, 21, 20, 0.7)");
-    expect(css).toContain("--font-display: \"Recoleta\", Georgia, serif");
-    expect(css).toContain("--gradient-peach: linear-gradient(135deg, #e87a7f 0%, #e4b5d3 52%, #e4b8a6 100%)");
-    expect(css).not.toContain("fonts.googleapis.com/css2?family=DM+Sans");
+    expect(css).toContain("--color-bg: #ffffff");
+    expect(css).toContain("--color-user-bubble: #f4f4f4");
+    expect(css).toContain("--color-sidebar-bg: #f9f9f9");
+    expect(css).toContain("fonts.googleapis.com/css2?family=DM+Sans");
+    expect(css).not.toContain("--gradient-peach");
   });
 
-  it("keeps the authenticated shell viewport-safe and responsive", async () => {
+  it("restores the original authenticated shell dimensions and mobile toggle", async () => {
     const [layout, css] = await Promise.all([
       readFile(path.join(root, "app/(app)/layout.tsx"), "utf8"),
       readFile(path.join(root, "app/globals.css"), "utf8"),
     ]);
 
-    expect(layout).toContain('minHeight: "100dvh"');
-    expect(layout).toContain('className="mora-main"');
-    expect(css).toContain("@media (min-width: 768px)");
-    expect(css).toContain("min-width: 0");
-    expect(css).toContain("margin-left: 272px");
-    expect(css).toContain("width: calc(100% - 272px)");
+    expect(layout).toContain('minHeight: "100vh"');
+    expect(layout).toContain('className="md-hidden-toggle"');
+    expect(layout).toContain("main { margin-left: 260px; }");
+    expect(layout).not.toContain('className="mora-main"');
+    expect(css).not.toContain("margin-left: 272px");
   });
 
   it("gives the simulation dashboard a wide canvas with a mobile fallback", async () => {
