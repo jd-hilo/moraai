@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -46,21 +47,21 @@ function CreditBadge() {
     <div
       style={{
         padding: "10px 12px 14px",
-        borderTop: "1px solid var(--color-border)",
+        borderTop: "1px solid #ececec",
         flexShrink: 0,
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "0.02em" }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#0d0d0d", letterSpacing: "0.02em" }}>
           {info.credits} credits
         </span>
-        <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>{resetLabel}</span>
+        <span style={{ fontSize: 10, color: "#9ca3af" }}>{resetLabel}</span>
       </div>
       <div
         style={{
           height: 3,
           borderRadius: 3,
-          backgroundColor: "rgba(22,21,20,0.09)",
+          backgroundColor: "#ececec",
           overflow: "hidden",
         }}
       >
@@ -68,7 +69,7 @@ function CreditBadge() {
           style={{
             height: "100%",
             width: `${pct}%`,
-            background: low ? "#b74d45" : "var(--gradient-peach)",
+            backgroundColor: low ? "#dc2626" : "#0d0d0d",
             transition: "width 0.3s ease",
           }}
         />
@@ -210,9 +211,9 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           top: 0,
           left: 0,
           bottom: 0,
-          width: 272,
-          backgroundColor: "var(--color-sidebar-bg)",
-          borderRight: "1px solid var(--color-border)",
+          width: 260,
+          backgroundColor: "#f9f9f9",
+          borderRight: "1px solid #e5e5e5",
           display: "flex",
           flexDirection: "column",
           zIndex: 50,
@@ -231,31 +232,17 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }} aria-label="Mora">
-            <span
-              aria-hidden="true"
-              style={{
-                width: 23,
-                height: 23,
-                display: "block",
-                borderRadius: "50%",
-                background: "var(--gradient-peach)",
-                border: "1px solid var(--color-border)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55)",
-              }}
-            />
-            <span
-              style={{
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-display)",
-                fontSize: 23,
-                fontWeight: 400,
-                letterSpacing: "-0.035em",
-              }}
-            >
-              Mora
-            </span>
-          </div>
+          <Image
+            src="/mora-logo.png"
+            alt="Mora"
+            width={1000}
+            height={300}
+            style={{
+              height: 28,
+              width: "auto",
+              display: "block",
+            }}
+          />
           <Link
             href="/chat"
             onClick={onClose}
@@ -266,16 +253,16 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: 999,
+              borderRadius: 8,
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "var(--color-text-muted)",
+              color: "#6e6e80",
               textDecoration: "none",
               transition: "background-color 0.15s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "var(--color-hover)";
+              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "rgba(0,0,0,0.05)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "transparent";
@@ -302,15 +289,15 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   alignItems: "center",
                   gap: "10px",
                   padding: "8px 10px",
-                  borderRadius: "12px",
+                  borderRadius: "8px",
                   fontSize: "14px",
                   fontWeight: active ? 500 : 400,
-                  color: "var(--color-text-primary)",
+                  color: active ? "#0d0d0d" : "#0d0d0d",
                   textDecoration: "none",
                   backgroundColor: active
-                    ? "var(--color-active)"
+                    ? "rgba(0,0,0,0.07)"
                     : hovered
-                    ? "var(--color-hover)"
+                    ? "rgba(0,0,0,0.05)"
                     : "transparent",
                   transition: "background-color 0.12s",
                   marginBottom: "1px",
@@ -322,7 +309,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: active ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                    color: active ? "#0d0d0d" : "#6e6e80",
                     flexShrink: 0,
                   }}
                 >
@@ -340,7 +327,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             style={{
               fontSize: "11px",
               fontWeight: 600,
-              color: "var(--color-text-muted)",
+              color: "#6e6e80",
               textTransform: "uppercase",
               letterSpacing: "0.07em",
               padding: "0 10px",
@@ -364,15 +351,15 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   alignItems: "center",
                   gap: "10px",
                   padding: "8px 10px",
-                  borderRadius: "12px",
+                  borderRadius: "8px",
                   fontSize: "14px",
                   fontWeight: active ? 500 : 400,
-                  color: "var(--color-text-primary)",
+                  color: "#0d0d0d",
                   textDecoration: "none",
                   backgroundColor: active
-                    ? "var(--color-active)"
+                    ? "rgba(0,0,0,0.07)"
                     : hovered
-                    ? "var(--color-hover)"
+                    ? "rgba(0,0,0,0.05)"
                     : "transparent",
                   transition: "background-color 0.12s",
                   marginBottom: "1px",
@@ -384,7 +371,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: active ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                    color: active ? "#0d0d0d" : "#6e6e80",
                     flexShrink: 0,
                   }}
                 >
@@ -397,7 +384,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         </div>
 
         {/* Divider */}
-        <div style={{ height: 1, backgroundColor: "var(--color-border)", margin: "8px 8px 0", flexShrink: 0 }} />
+        <div style={{ height: 1, backgroundColor: "#e5e5e5", margin: "8px 8px 0", flexShrink: 0 }} />
 
         {/* Recent conversations */}
         <div style={{ flex: 1, overflow: "auto", padding: "12px 8px 12px" }}>
@@ -405,7 +392,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             style={{
               fontSize: "11px",
               fontWeight: 600,
-              color: "var(--color-text-muted)",
+              color: "#6e6e80",
               textTransform: "uppercase",
               letterSpacing: "0.07em",
               padding: "0 10px",

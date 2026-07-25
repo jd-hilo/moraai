@@ -23,7 +23,7 @@ export function TypingIndicator() {
           height: 18,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle at 38% 38%, #f8d6cf 0%, #e4b8a6 30%, #e4b5d3 62%, #e87a7f 100%)",
+            "radial-gradient(circle at 38% 38%, #ffc6e1 0%, #efb6ef 28%, #c6a6f0 55%, #8f85df 85%, #6f6bc9 100%)",
           boxShadow:
             "0 0 10px rgba(180, 140, 240, 0.55), 0 0 4px rgba(255, 180, 220, 0.5), inset 0 0 3px rgba(255, 220, 240, 0.5)",
           flexShrink: 0,
