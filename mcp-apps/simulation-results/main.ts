@@ -61,10 +61,9 @@ function renderPath(path: SimulationPath, index: number, total: number) {
 
   const heading = document.createElement("div");
   heading.className = "detail-heading";
-  heading.innerHTML = `<div><p class="detail-kicker">Path ${index + 1}</p><h2></h2></div><span class="probability"></span>`;
+  heading.innerHTML = `<div class="detail-topline"><p class="detail-kicker">Path ${index + 1}</p><div class="detail-aside"><span class="probability"></span></div></div><h2></h2>`;
   heading.querySelector("h2")!.textContent = path.title;
   heading.querySelector<HTMLElement>(".probability")!.textContent = `${path.probability}% likely`;
-  pathDetail.append(heading);
 
   if (readingExpanded) {
     const narrative = document.createElement("p");
@@ -77,7 +76,8 @@ function renderPath(path: SimulationPath, index: number, total: number) {
   const actions = document.createElement("div");
   actions.className = "detail-actions";
   actions.append(readPathButton, openInMoraButton);
-  pathDetail.append(actions);
+  heading.querySelector<HTMLElement>(".detail-aside")!.append(actions);
+  pathDetail.prepend(heading);
 
   pathPosition.textContent = `${index + 1} / ${total}`;
   previousPathButton.disabled = index === 0;

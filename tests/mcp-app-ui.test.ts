@@ -13,10 +13,10 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(435_772);
+    expect(artifact.byteLength).toBe(436_060);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "d86b9a5fa6492c0456853a3fd18726eb9f433963a0399349530e8351bbfbb0ff"
+      "bb70ba916ea93eebe2fe53f7dcae36b89919cec803ca7c930492d8cffd70c40e"
     );
     const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
     expect(new Set(imageDataUrls).size).toBe(1);
@@ -79,6 +79,7 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain("height: 222px");
     expect(html).not.toContain('class="premise"');
     expect(html).not.toContain('id="synthesis-panel"');
+    expect(html).toContain(".detail-topline");
     expect(html).toContain("padding-bottom: max(260px, calc(var(--host-safe-bottom) + env(safe-area-inset-bottom) + 220px))");
     expect(html).toContain("@media (max-width: 560px)");
     expect(html).toContain(".header-main { grid-template-columns: 1fr; gap: 14px; }");

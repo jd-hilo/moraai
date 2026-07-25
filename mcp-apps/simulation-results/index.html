@@ -247,8 +247,16 @@
         padding: 29px 2px 4px;
         border-top: 1px solid var(--line);
       }
-      .detail-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
-      .detail-kicker { margin: 0 0 8px; color: var(--accent); font-size: 10px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; }
+      .detail-heading { display: grid; gap: 14px; }
+      .detail-topline {
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+      .detail-aside { display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
+      .detail-kicker { margin: 0; color: var(--accent); font-size: 10px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; }
       .detail-heading h2 {
         display: -webkit-box;
         overflow: hidden;
@@ -284,7 +292,7 @@
         line-height: 1.76;
         white-space: pre-wrap;
       }
-      .detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: auto; }
+      .detail-actions { display: flex; align-items: center; gap: 14px; }
       .read-path {
         min-width: 112px;
         padding: 0 18px;
@@ -329,7 +337,7 @@
         overflow: visible;
         min-height: 0;
       }
-      html[data-display-mode="fullscreen"] .detail-actions { margin-top: 28px; }
+      html[data-display-mode="fullscreen"] .detail-topline { align-items: flex-start; }
       html[data-display-mode="fullscreen"] .read-path { display: none; }
 
       @keyframes pulse { 50% { opacity: .45; } }
@@ -352,10 +360,11 @@
         h1 { min-height: 2.28em; font-size: clamp(28px, 9vw, 36px); line-height: 1.14; }
         .path-row { flex-basis: min(74vw, 230px); }
         .path-detail { height: 236px; padding-top: 26px; }
-        .detail-heading { grid-template-columns: 1fr; gap: 10px; }
+        .detail-heading { gap: 12px; }
+        .detail-topline { align-items: flex-start; }
+        .detail-aside { flex-wrap: wrap; gap: 10px; }
         .detail-heading h2 { font-size: 30px; }
-        .probability { justify-self: start; }
-        .detail-actions { gap: 15px; }
+        .detail-actions { gap: 10px; }
       }
     </style>
   </head>
