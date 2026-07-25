@@ -13,12 +13,17 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(409_150);
-    expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(102_000);
+    expect(artifact.byteLength).toBe(434_765);
+    expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "77bac8148ed1b46f4292c039e5cf2c8b3fda75731f1a2c82e65ed0927b30401f"
+      "d4c880403a0ff4654f5233ebf79e01e458047e45b7a68b42885e456b6d08a1b9"
     );
-    expect(source).not.toMatch(/data:(?:font|image)\//);
+    const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
+    expect(new Set(imageDataUrls).size).toBe(1);
+    expect(imageDataUrls).toHaveLength(2);
+    expect(Buffer.from(imageDataUrls[0]!.split(",")[1]!, "base64").byteLength).toBeLessThanOrEqual(
+      12_000
+    );
     expect(source).not.toContain("Recoleta-Regular.otf");
     expect(source).not.toContain("mora-logo.png");
     expect(source).not.toContain("fonts.googleapis.com");
@@ -41,13 +46,14 @@ describe("MCP App host-safety regression guards", () => {
       if (selector.startsWith(".")) expect(html).toContain(`class="${selector.slice(1)}`);
     }
     expect(html).toContain('aria-label="Loading simulation results"');
-    expect(html).toContain("Mora simulation");
+    expect(html).toContain('alt="Mora"');
+    expect(html).not.toMatch(/>Mora simulation<|>simulation</);
     expect(html).not.toContain("<noscript>");
     expect(html).not.toMatch(/<p[^>]+style=/);
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
-  it("keeps the authored body on the production-proven boot structure", async () => {
+  it("keeps the authored body deterministic", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
@@ -55,22 +61,22 @@ describe("MCP App host-safety regression guards", () => {
     const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
 
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "2ef4d30e51b6c112c6ef354f7cbd378d384bb3c566008e969d5b185240748459"
+      "1f5d1325059801e30781f2773a72cc888b69134642779372f7864ad573c09c03"
     );
   });
 
-  it("keeps the proven narrow document flow and collapses safely for smaller hosts", async () => {
+  it("keeps a calm two-row path flow and collapses safely for smaller hosts", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain(".content { padding: 22px 28px 30px; }");
-    expect(html).not.toContain("max-width: 1180px");
+    expect(html).toContain("max-width: 980px");
     expect(html).not.toContain("explorer-grid");
     expect(html).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
-    expect(html).toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
-    expect(html).toContain("@media (max-width: 600px)");
-    expect(html).toContain(".path-detail { display: block; }");
+    expect(html).not.toContain("grid-template-columns: minmax(190px, .82fr) minmax(0, 1.38fr)");
+    expect(html).toContain("@media (max-width: 560px)");
+    expect(html).toContain(".header-main { grid-template-columns: 1fr; gap: 14px; }");
+    expect(html).toContain('.narrative[data-expanded="true"] { display: block; }');
   });
 });
