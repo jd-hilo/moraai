@@ -15,8 +15,8 @@ const sha256 = createHash("sha256").update(artifact).digest("hex");
 
 // Lock the reviewed v3 artifact. After intentional resource changes, Claude's
 // installed connector must refresh its tools list before render tests.
-const EXPECTED_RAW_BYTES = 435_772;
-const EXPECTED_SHA256 = "d86b9a5fa6492c0456853a3fd18726eb9f433963a0399349530e8351bbfbb0ff";
+const EXPECTED_RAW_BYTES = 436_060;
+const EXPECTED_SHA256 = "bb70ba916ea93eebe2fe53f7dcae36b89919cec803ca7c930492d8cffd70c40e";
 // zlib output varies by runtime; Vercel's build image is ~1 KB above local.
 const MAX_GZIP_BYTES = 116_000;
 
