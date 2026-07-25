@@ -310,23 +310,21 @@ describe("MCP tool surface", () => {
     });
   });
 
-  it("ships separate cache-busted reading and exact-simulation actions", async () => {
+  it("ships separate focused-reading and exact-simulation actions", async () => {
     const [html, script] = await Promise.all([
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/main.ts"), "utf8"),
     ]);
 
-    expect(html.match(/id="synthesis-toggle"/g) ?? []).toHaveLength(1);
-    expect(html).toContain(
-      'aria-controls="path-narrative synthesis-panel" hidden>Read path</button>'
-    );
-    expect(script).toContain("actions.append(synthesisToggle);");
-    expect(html).not.toContain('id="open-in-mora"');
+    expect(html.match(/id="read-path"/g) ?? []).toHaveLength(1);
+    expect(html.match(/id="open-in-mora"/g) ?? []).toHaveLength(1);
+    expect(script).toContain("actions.append(readPathButton, openInMoraButton);");
     expect(script).toContain('app.openLink({ url: simulationUrl })');
     expect(script).toContain('if (await openSimulationInMora()) return "external"');
-    expect(script).not.toContain("openInMoraButton");
+    expect(script).toContain("openInMoraButton.addEventListener");
     expect(script).not.toContain("window.open");
-    expect(script).not.toContain("const readButton");
+    expect(script).not.toContain("synthesisToggle");
+    expect(script).not.toContain("synthesisPanel");
     expect(script).not.toContain("View Mora synthesis");
     expect(script).not.toContain("Hide Mora synthesis");
   });
@@ -345,16 +343,17 @@ describe("MCP tool surface", () => {
     expect(logo.byteLength).toBeLessThanOrEqual(12_000);
   });
 
-  it("uses Unreal's lightweight editorial hierarchy without an embedded font", async () => {
+  it("uses Mora's lightweight live sans hierarchy without an embedded font", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("--bg: #faf9f7");
+    expect(html).toContain("--bg: #ffffff");
     expect(html).toContain("--accent: #d9797f");
-    expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
-    expect(html).toContain("radial-gradient(circle at 88% 30%");
+    expect(html).toContain('font-family: "DM Sans", -apple-system');
+    expect(html).not.toContain("ui-serif");
+    expect(html).not.toContain("radial-gradient");
     expect(html).not.toContain("fonts.googleapis.com");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");
@@ -362,20 +361,23 @@ describe("MCP tool surface", () => {
     expect(html).not.toContain("data:image/");
   });
 
-  it("keeps the inline result focused on one short path summary", async () => {
+  it("keeps the inline result focused on path identities without summaries", async () => {
     const [html, script] = await Promise.all([
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
       readFile(path.join(process.cwd(), "mcp-apps/simulation-results/main.ts"), "utf8"),
     ]);
 
-    expect(html).toContain("<p class=\"section-label\">Possible paths</p>");
+    expect(html).toContain('<p id="paths-label" class="section-label">Possible paths</p>');
     expect(html).not.toContain("All ten stay in view");
     expect(html).not.toContain("Explore ten possible paths");
     expect(html).toContain(".narrative {");
-    expect(html).toContain("display: none;");
-    expect(html).toContain('.narrative[data-expanded="true"] { display: block; }');
-    expect(script).toContain('meta.textContent = `${result.simulation.timeHorizonYears}-year outlook`');
+    expect(html).not.toContain('class="premise"');
+    expect(html).not.toContain('id="synthesis-panel"');
+    expect(script).toContain('button.querySelector<HTMLElement>(".path-name")!.textContent = path.title');
+    expect(script).toContain("if (readingExpanded)");
+    expect(script).toContain('meta.textContent = `${result.simulation.timeHorizonYears}-year outlook · ${result.pathCount} paths`');
     expect(script).not.toContain("result.simulation.scenario} ·");
+    expect(script).not.toContain("premise.textContent");
     expect(script).not.toContain("Select this path to discuss it with Claude");
     expect(script).not.toContain("Run status:");
   });
