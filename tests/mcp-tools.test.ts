@@ -318,7 +318,7 @@ describe("MCP tool surface", () => {
 
     expect(html.match(/id="synthesis-toggle"/g) ?? []).toHaveLength(1);
     expect(html).toContain(
-      'aria-controls="path-narrative synthesis-panel" hidden>Read full path</button>'
+      'aria-controls="path-narrative synthesis-panel" hidden>Read path</button>'
     );
     expect(script).toContain("actions.append(synthesisToggle);");
     expect(html).not.toContain('id="open-in-mora"');
@@ -331,35 +331,53 @@ describe("MCP tool surface", () => {
     expect(script).not.toContain("Hide Mora synthesis");
   });
 
-  it("uses a host-safe CSS Mora mark without embedding image assets", async () => {
-    const html = await readFile(
-      path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
-      "utf8"
-    );
+  it("uses the optimized canonical Mora logo without the redundant simulation label", async () => {
+    const [html, logo] = await Promise.all([
+      readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
+      readFile(path.join(process.cwd(), "public/mora-logo-mcp.png")),
+    ]);
 
-    expect(html.match(/class="brand-mark"/g) ?? []).toHaveLength(2);
-    expect(html.match(/<span>Mora simulation<\/span>/g) ?? []).toHaveLength(2);
-    expect(html).not.toContain("mora-logo.png");
-    expect(html).not.toContain("<img");
+    expect(html.match(/class="brand-logo"/g) ?? []).toHaveLength(2);
+    expect(html.match(/src="\.\.\/\.\.\/public\/mora-logo-mcp\.png"/g) ?? []).toHaveLength(2);
+    expect(html.match(/alt="Mora"/g) ?? []).toHaveLength(2);
+    expect(html).not.toMatch(/>Mora simulation<|>simulation</);
+    expect(html).not.toContain("brand-mark");
+    expect(logo.byteLength).toBeLessThanOrEqual(12_000);
   });
 
-  it("uses Unreal's lightweight editorial tokens without external asset payloads", async () => {
+  it("uses Unreal's lightweight editorial hierarchy without an embedded font", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
     );
 
-    expect(html).toContain("--bg: #fafafa");
-    expect(html).toContain("--accent: #e87a7f");
-    expect(html).toContain("--accent-mid: #e4b5d3");
-    expect(html).toContain("--accent-warm: #e4b8a6");
+    expect(html).toContain("--bg: #faf9f7");
+    expect(html).toContain("--accent: #d9797f");
     expect(html).toContain('--display: ui-serif, Georgia, Cambria, "Times New Roman", serif;');
-    expect(html).toContain("linear-gradient(135deg, var(--accent), var(--accent-mid) 52%, var(--accent-warm))");
+    expect(html).toContain("radial-gradient(circle at 88% 30%");
     expect(html).not.toContain("fonts.googleapis.com");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");
     expect(html).not.toContain("data:font/");
     expect(html).not.toContain("data:image/");
+  });
+
+  it("keeps the inline result focused on one short path summary", async () => {
+    const [html, script] = await Promise.all([
+      readFile(path.join(process.cwd(), "mcp-apps/simulation-results/index.html"), "utf8"),
+      readFile(path.join(process.cwd(), "mcp-apps/simulation-results/main.ts"), "utf8"),
+    ]);
+
+    expect(html).toContain("<p class=\"section-label\">Possible paths</p>");
+    expect(html).not.toContain("All ten stay in view");
+    expect(html).not.toContain("Explore ten possible paths");
+    expect(html).toContain(".narrative {");
+    expect(html).toContain("display: none;");
+    expect(html).toContain('.narrative[data-expanded="true"] { display: block; }');
+    expect(script).toContain('meta.textContent = `${result.simulation.timeHorizonYears}-year outlook`');
+    expect(script).not.toContain("result.simulation.scenario} ·");
+    expect(script).not.toContain("Select this path to discuss it with Claude");
+    expect(script).not.toContain("Run status:");
   });
 
   it("continues an accidental status check into coaching instead of a tool tour", async () => {

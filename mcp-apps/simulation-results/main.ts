@@ -76,7 +76,7 @@ function setReadingVisibility(visible: boolean) {
   synthesisToggle.setAttribute("aria-expanded", String(visible));
   const isFullscreen = document.documentElement.dataset.displayMode === "fullscreen";
   synthesisToggle.hidden = isFullscreen;
-  synthesisToggle.textContent = visible ? "Show less" : "Read full path";
+  synthesisToggle.textContent = visible ? "Close" : "Read path";
 }
 
 function syncDisplayMode(mode = app.getHostContext()?.displayMode ?? "inline") {
@@ -186,18 +186,16 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
   actions.className = "detail-actions";
   actions.append(synthesisToggle);
 
-  const footer = document.createElement("div");
-  footer.className = "detail-footer";
-  footer.innerHTML = `<span>Run status: <strong></strong></span><span>Path confidence: <strong></strong></span><span class="context-note"></span>`;
-  const values = footer.querySelectorAll("strong");
+  const stats = document.createElement("div");
+  stats.className = "detail-stats";
+  stats.innerHTML = `<span>Status <strong></strong></span><span>Confidence <strong></strong></span>`;
+  const values = stats.querySelectorAll("strong");
   values[0].textContent = path.runStatus;
   values[1].textContent = confidence;
-  footer.querySelector<HTMLElement>(".context-note")!.textContent = shareWithModel
-    ? "Selected for your next Claude message"
-    : "Select this path to discuss it with Claude";
-  pathDetail.append(heading, premise, narrative, actions, footer);
+  pathDetail.append(heading, premise, narrative, actions, stats);
 
   if (!shareWithModel) return;
+  announce(`Path ${index + 1} selected for your next Claude message.`);
 
   void app.updateModelContext({
     content: [
@@ -215,8 +213,7 @@ function renderPath(path: SimulationPath, index: number, total: number, shareWit
     ],
     structuredContent: { selectedPath: path, pathIndex: index + 1, pathCount: total },
   }).catch(() => {
-    footer.querySelector<HTMLElement>(".context-note")!.textContent =
-      "Path selected in Mora";
+    announce(`Path ${index + 1} selected in Mora.`);
   });
 }
 
@@ -257,8 +254,12 @@ function renderSimulation(result: SimulationResult) {
   }
 
   title.textContent = result.simulation.title;
-  meta.textContent = `${result.simulation.scenario} · ${result.simulation.timeHorizonYears}-year horizon`;
-  count.textContent = `${result.completedPathCount}/${result.pathCount} complete`;
+  meta.textContent = `${result.simulation.timeHorizonYears}-year outlook`;
+  count.textContent = `${result.pathCount} paths`;
+  count.setAttribute(
+    "aria-label",
+    `${result.completedPathCount} of ${result.pathCount} paths complete`
+  );
   simulationUrl = result.simulationUrl;
   pathList.replaceChildren();
 
@@ -272,10 +273,8 @@ function renderSimulation(result: SimulationResult) {
     button.setAttribute("aria-label", `Path ${index + 1}: ${path.title}, ${path.probability}% likely`);
     button.setAttribute("aria-selected", index === 0 ? "true" : "false");
     button.tabIndex = index === 0 ? 0 : -1;
-    button.innerHTML = `<span class="path-number"></span><span class="path-copy"><strong></strong><small></small></span><span class="path-probability"></span>`;
+    button.innerHTML = `<span class="path-number"></span><span class="path-probability"></span>`;
     button.querySelector<HTMLElement>(".path-number")!.textContent = String(index + 1).padStart(2, "0");
-    button.querySelector("strong")!.textContent = path.title;
-    button.querySelector("small")!.textContent = path.description;
     button.querySelector<HTMLElement>(".path-probability")!.textContent = `${path.probability}%`;
     const selectPath = () => {
       pathList.querySelectorAll<HTMLButtonElement>(".path-row").forEach((row) => {

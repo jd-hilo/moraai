@@ -13,12 +13,12 @@ const rawBytes = artifact.byteLength;
 const gzipBytes = gzipSync(artifact).byteLength;
 const sha256 = createHash("sha256").update(artifact).digest("hex");
 
-// Lock the production-verified v3 artifact. After intentional resource changes,
-// Claude's installed connector must refresh its tools list before render tests.
-const EXPECTED_RAW_BYTES = 409_150;
-const EXPECTED_SHA256 = "77bac8148ed1b46f4292c039e5cf2c8b3fda75731f1a2c82e65ed0927b30401f";
+// Lock the reviewed v3 artifact. After intentional resource changes, Claude's
+// installed connector must refresh its tools list before render tests.
+const EXPECTED_RAW_BYTES = 434_765;
+const EXPECTED_SHA256 = "d4c880403a0ff4654f5233ebf79e01e458047e45b7a68b42885e456b6d08a1b9";
 // zlib output varies by runtime; Vercel's build image is ~1 KB above local.
-const MAX_GZIP_BYTES = 102_000;
+const MAX_GZIP_BYTES = 116_000;
 
 const failures = [];
 if (rawBytes !== EXPECTED_RAW_BYTES) {
@@ -33,13 +33,24 @@ if (gzipBytes > MAX_GZIP_BYTES) {
 
 for (const forbidden of [
   "data:font/",
-  "data:image/",
   "Recoleta-Regular.otf",
   "mora-logo.png",
   "fonts.googleapis.com",
   "fonts.gstatic.com",
 ]) {
   if (source.includes(forbidden)) failures.push(`bundle contains forbidden resource: ${forbidden}`);
+}
+
+const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
+const uniqueImageDataUrls = new Set(imageDataUrls);
+if (uniqueImageDataUrls.size !== 1) {
+  failures.push(`bundle contains ${uniqueImageDataUrls.size} unique PNG assets; expected 1`);
+} else {
+  const [logoDataUrl] = uniqueImageDataUrls;
+  const logoBytes = Buffer.from(logoDataUrl.split(",")[1], "base64").byteLength;
+  if (logoBytes > 12_000) {
+    failures.push(`embedded Mora logo is ${logoBytes} bytes; budget is 12000`);
+  }
 }
 
 for (const required of [
@@ -50,7 +61,8 @@ for (const required of [
   'id="path-list"',
   'id="path-detail"',
   'aria-label="Loading simulation results"',
-  "Mora simulation",
+  'alt="Mora"',
+  "Possible paths",
 ]) {
   if (!source.includes(required)) failures.push(`bundle is missing required boot contract: ${required}`);
 }
