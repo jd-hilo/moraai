@@ -13,10 +13,10 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(436_060);
+    expect(artifact.byteLength).toBe(436_559);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "bb70ba916ea93eebe2fe53f7dcae36b89919cec803ca7c930492d8cffd70c40e"
+      "2134707e5dc5ea9237708a64b66a11a4cb2d5cb42c990f96ee9160c66a239211"
     );
     const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
     expect(new Set(imageDataUrls).size).toBe(1);
@@ -67,10 +67,10 @@ describe("MCP App host-safety regression guards", () => {
   });
 
   it("keeps a calm horizontal path flow and a composer-safe reading view", async () => {
-    const html = await readFile(
-      path.join(root, "mcp-apps/simulation-results/index.html"),
-      "utf8"
-    );
+    const [html, script] = await Promise.all([
+      readFile(path.join(root, "mcp-apps/simulation-results/index.html"), "utf8"),
+      readFile(path.join(root, "mcp-apps/simulation-results/main.ts"), "utf8"),
+    ]);
 
     expect(html).toContain("max-width: 1040px");
     expect(html).not.toContain("explorer-grid");
@@ -80,6 +80,10 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).not.toContain('class="premise"');
     expect(html).not.toContain('id="synthesis-panel"');
     expect(html).toContain(".detail-topline");
+    expect(html).toContain(".path-summary");
+    expect(html).toContain("-webkit-line-clamp: 2");
+    expect(html).toContain('html[data-display-mode="fullscreen"] .path-summary { display: none; }');
+    expect(script).toContain('summary.textContent = path.description');
     expect(html).toContain("padding-bottom: max(260px, calc(var(--host-safe-bottom) + env(safe-area-inset-bottom) + 220px))");
     expect(html).toContain("@media (max-width: 560px)");
     expect(html).toContain(".header-main { grid-template-columns: 1fr; gap: 14px; }");

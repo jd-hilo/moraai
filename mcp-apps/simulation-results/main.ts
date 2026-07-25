@@ -71,6 +71,11 @@ function renderPath(path: SimulationPath, index: number, total: number) {
     narrative.id = "path-narrative";
     narrative.textContent = path.output;
     pathDetail.append(narrative);
+  } else {
+    const summary = document.createElement("p");
+    summary.className = "path-summary";
+    summary.textContent = path.description;
+    pathDetail.append(summary);
   }
 
   const actions = document.createElement("div");
