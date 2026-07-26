@@ -72,14 +72,126 @@
         display: block;
       }
 
-      .state-copy { display: grid; gap: 10px; max-width: 460px; }
-      .state-line {
-        height: 9px;
-        border-radius: 999px;
-        background: #eeecea;
-        animation: pulse 1.4s ease-in-out infinite;
+      .loading-state {
+        min-height: 380px;
+        grid-template-rows: auto 1fr;
+        align-content: stretch;
+        gap: 16px;
+        overflow: hidden;
       }
-      .state-line.short { width: 48%; }
+      .loading-layout {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(250px, .92fr) minmax(220px, 1.08fr);
+        gap: 36px;
+        align-items: center;
+      }
+      .twin-field {
+        min-width: 0;
+        min-height: 218px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: var(--surface-subtle);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        contain: layout paint;
+        isolation: isolate;
+      }
+      .twin-cluster {
+        display: grid;
+        grid-template-columns: repeat(9, 18px);
+        gap: 9px 8px;
+        place-content: center;
+        padding: 25px;
+      }
+      .twin {
+        --skin-light: #fde8c0;
+        --skin-dark: #d4956a;
+        --shirt: #c4b5fd;
+        --shirt-dark: #9d91d2;
+        position: relative;
+        width: 18px;
+        height: 18px;
+        animation: twin-float-a 2.7s ease-in-out calc(var(--i) * -173ms) infinite;
+      }
+      .twin::before,
+      .twin::after {
+        position: absolute;
+        left: 50%;
+        content: "";
+        transform: translateX(-50%);
+      }
+      .twin::before {
+        top: 0;
+        z-index: 1;
+        width: 10px;
+        height: 10px;
+        background: radial-gradient(circle at 36% 30%, var(--skin-light), var(--skin-dark));
+        border-radius: 50%;
+        box-shadow: 0 2px 3px rgba(21, 20, 18, .14), inset 0 1px 1px rgba(255, 255, 255, .34);
+      }
+      .twin::after {
+        bottom: 0;
+        width: 16px;
+        height: 9px;
+        background: linear-gradient(160deg, var(--shirt), var(--shirt-dark));
+        border-radius: 9px 9px 2px 2px;
+        box-shadow: 0 2px 3px rgba(21, 20, 18, .12), inset 0 1px 0 rgba(255, 255, 255, .24);
+      }
+      .twin:nth-child(6n + 2) { --skin-light: #fcd0aa; --skin-dark: #c27a52; --shirt: #93c5fd; --shirt-dark: #76a6d5; }
+      .twin:nth-child(6n + 3) { --skin-light: #f5cba7; --skin-dark: #a96b3e; --shirt: #86efac; --shirt-dark: #6cbe8a; }
+      .twin:nth-child(6n + 4) { --skin-light: #d4a57a; --skin-dark: #8b5e38; --shirt: #fda4af; --shirt-dark: #d1848d; }
+      .twin:nth-child(6n + 5) { --skin-light: #e8c49a; --skin-dark: #b5783c; --shirt: #fde68a; --shirt-dark: #d0b96f; }
+      .twin:nth-child(6n) { --skin-light: #b8855a; --skin-dark: #7a4a28; --shirt: #f0abfc; --shirt-dark: #c288cc; }
+      .twin:nth-child(4n + 2) { animation-name: twin-float-b; animation-duration: 3.1s; }
+      .twin:nth-child(4n + 3) { animation-name: twin-float-c; animation-duration: 3.5s; }
+      .twin:nth-child(4n) { animation-name: twin-float-d; animation-duration: 3.9s; }
+      .loading-message {
+        min-width: 0;
+        display: grid;
+        align-content: center;
+        justify-items: start;
+      }
+      .loading-eyebrow {
+        margin: 0 0 10px;
+        color: var(--accent);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      .loading-title {
+        max-width: 13ch;
+        margin: 0;
+        font-size: clamp(28px, 4.2vw, 38px);
+        font-weight: 400;
+        line-height: 1.08;
+        letter-spacing: -.04em;
+      }
+      .loading-description {
+        max-width: 34ch;
+        margin: 13px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .loading-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 19px;
+        color: var(--quiet);
+        font-size: 11px;
+      }
+      .loading-status::before {
+        width: 6px;
+        height: 6px;
+        content: "";
+        background: var(--accent);
+        border-radius: 50%;
+        animation: status-pulse 1.8s ease-in-out infinite;
+      }
       .error-state { grid-template-columns: 38px minmax(0, 1fr); align-items: start; align-content: center; }
       .error-mark { width: 36px; height: 36px; display: grid; place-items: center; color: var(--danger); background: var(--danger-soft); border-radius: 50%; }
       .error-copy h2 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -353,9 +465,29 @@
       html[data-display-mode="fullscreen"] .detail-topline { align-items: flex-start; }
       html[data-display-mode="fullscreen"] .read-path { display: none; }
 
-      @keyframes pulse { 50% { opacity: .45; } }
-      @media (prefers-reduced-motion: reduce) {
-        .state-line { animation: none; }
+      @keyframes twin-float-a {
+        0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+        50% { transform: translateY(-8px) rotate(1.5deg); }
+      }
+      @keyframes twin-float-b {
+        0%, 100% { transform: translateY(-4px) rotate(1deg); }
+        50% { transform: translateY(5px) rotate(-1deg); }
+      }
+      @keyframes twin-float-c {
+        0%, 100% { transform: translateY(3px) rotate(.5deg); }
+        50% { transform: translateY(-7px) rotate(-.5deg); }
+      }
+      @keyframes twin-float-d {
+        0%, 100% { transform: translateY(-3px) rotate(-.8deg); }
+        50% { transform: translateY(6px) rotate(.8deg); }
+      }
+      @keyframes status-pulse {
+        0%, 100% { opacity: .38; transform: scale(.82); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce), (update: slow) {
+        .twin,
+        .loading-status::before { animation: none; }
         .path-list { scroll-behavior: auto; }
         .path-row,
         .path-arrow,
@@ -366,6 +498,11 @@
 
       @media (max-width: 560px) {
         .state, .header, .content { padding-right: 20px; padding-left: 20px; }
+        .loading-state { min-height: 500px; gap: 20px; }
+        .loading-layout { grid-template-columns: 1fr; gap: 24px; }
+        .twin-field { min-height: 200px; }
+        .twin-cluster { grid-template-columns: repeat(9, 18px); padding: 22px; }
+        .loading-title { max-width: 15ch; }
         .brand-logo { height: 39px; }
         .header { gap: 22px; }
         .header-main { grid-template-columns: 1fr; gap: 14px; }
@@ -383,11 +520,23 @@
   </head>
   <body>
     <main class="shell">
-      <section id="loading" class="state" aria-live="polite">
+      <section id="loading" class="state loading-state" aria-live="polite" aria-busy="true">
         <p class="state-brand"><img class="brand-logo" src="../../public/mora-logo-mcp.png" alt="Mora" width="240" height="72" /></p>
-        <div class="state-copy" aria-label="Loading simulation results">
-          <div class="state-line"></div>
-          <div class="state-line short"></div>
+        <div class="loading-layout" aria-label="Loading simulation results">
+          <div class="twin-field" aria-hidden="true">
+            <div class="twin-cluster">
+              <span class="twin" style="--i: 0"></span><span class="twin" style="--i: 1"></span><span class="twin" style="--i: 2"></span><span class="twin" style="--i: 3"></span><span class="twin" style="--i: 4"></span><span class="twin" style="--i: 5"></span><span class="twin" style="--i: 6"></span><span class="twin" style="--i: 7"></span><span class="twin" style="--i: 8"></span>
+              <span class="twin" style="--i: 9"></span><span class="twin" style="--i: 10"></span><span class="twin" style="--i: 11"></span><span class="twin" style="--i: 12"></span><span class="twin" style="--i: 13"></span><span class="twin" style="--i: 14"></span><span class="twin" style="--i: 15"></span><span class="twin" style="--i: 16"></span><span class="twin" style="--i: 17"></span>
+              <span class="twin" style="--i: 18"></span><span class="twin" style="--i: 19"></span><span class="twin" style="--i: 20"></span><span class="twin" style="--i: 21"></span><span class="twin" style="--i: 22"></span><span class="twin" style="--i: 23"></span><span class="twin" style="--i: 24"></span><span class="twin" style="--i: 25"></span><span class="twin" style="--i: 26"></span>
+              <span class="twin" style="--i: 27"></span><span class="twin" style="--i: 28"></span><span class="twin" style="--i: 29"></span><span class="twin" style="--i: 30"></span><span class="twin" style="--i: 31"></span><span class="twin" style="--i: 32"></span><span class="twin" style="--i: 33"></span><span class="twin" style="--i: 34"></span><span class="twin" style="--i: 35"></span>
+            </div>
+          </div>
+          <div class="loading-message">
+            <p class="loading-eyebrow">Simulation in progress</p>
+            <h2 class="loading-title">Exploring versions of you.</h2>
+            <p class="loading-description">Mora is running possible paths in parallel and preparing your report.</p>
+            <span class="loading-status">This can take a few minutes</span>
+          </div>
         </div>
       </section>
       <section id="error" class="state error-state" role="alert" hidden></section>
