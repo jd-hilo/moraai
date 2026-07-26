@@ -153,14 +153,6 @@
         align-content: center;
         justify-items: start;
       }
-      .loading-eyebrow {
-        margin: 0 0 10px;
-        color: var(--accent);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-      }
       .loading-title {
         max-width: 13ch;
         margin: 0;
@@ -168,29 +160,6 @@
         font-weight: 400;
         line-height: 1.08;
         letter-spacing: -.04em;
-      }
-      .loading-description {
-        max-width: 34ch;
-        margin: 13px 0 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
-      }
-      .loading-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 19px;
-        color: var(--quiet);
-        font-size: 11px;
-      }
-      .loading-status::before {
-        width: 6px;
-        height: 6px;
-        content: "";
-        background: var(--accent);
-        border-radius: 50%;
-        animation: status-pulse 1.8s ease-in-out infinite;
       }
       .error-state { grid-template-columns: 38px minmax(0, 1fr); align-items: start; align-content: center; }
       .error-mark { width: 36px; height: 36px; display: grid; place-items: center; color: var(--danger); background: var(--danger-soft); border-radius: 50%; }
@@ -481,13 +450,8 @@
         0%, 100% { transform: translateY(-3px) rotate(-.8deg); }
         50% { transform: translateY(6px) rotate(.8deg); }
       }
-      @keyframes status-pulse {
-        0%, 100% { opacity: .38; transform: scale(.82); }
-        50% { opacity: 1; transform: scale(1); }
-      }
       @media (prefers-reduced-motion: reduce), (update: slow) {
-        .twin,
-        .loading-status::before { animation: none; }
+        .twin { animation: none; }
         .path-list { scroll-behavior: auto; }
         .path-row,
         .path-arrow,
@@ -532,10 +496,7 @@
             </div>
           </div>
           <div class="loading-message">
-            <p class="loading-eyebrow">Simulation in progress</p>
-            <h2 class="loading-title">Exploring versions of you.</h2>
-            <p class="loading-description">Mora is running possible paths in parallel and preparing your report.</p>
-            <span class="loading-status">This can take a few minutes</span>
+            <h2 class="loading-title">Exploring other possible versions of you.</h2>
           </div>
         </div>
       </section>
