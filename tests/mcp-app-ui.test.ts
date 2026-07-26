@@ -13,10 +13,10 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(443_344);
+    expect(artifact.byteLength).toBe(442_132);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "418b72e556bfae3e478acf210f46b51c869719d5265d3ce04a6ca02ef50757bc"
+      "2b95f3860d9ff493a425afa0258be1267a31d9455894afcf2db22a6a14f1c3dd"
     );
     const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
     expect(new Set(imageDataUrls).size).toBe(1);
@@ -64,9 +64,11 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain("contain: layout paint");
     expect(html).not.toContain("filter:");
     expect(html).toContain("@media (prefers-reduced-motion: reduce), (update: slow)");
-    expect(html).toContain(".twin,");
-    expect(html).toContain("Exploring versions of you.");
-    expect(html).toContain("Mora is running possible paths in parallel");
+    expect(html).toContain(".twin { animation: none; }");
+    expect(html).toContain("Exploring other possible versions of you.");
+    expect(html).not.toContain("Simulation in progress");
+    expect(html).not.toContain("Mora is running possible paths in parallel");
+    expect(html).not.toContain("This can take a few minutes");
     expect(html).not.toContain("<canvas");
     expect(html).not.toContain("<video");
     expect(script).not.toMatch(/setInterval|setTimeout/);
@@ -81,7 +83,7 @@ describe("MCP App host-safety regression guards", () => {
     const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
 
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "0aed83734e0b7e6f6ae68dccce722ffa6dc76add410ed3e1678e8d44af6eddf3"
+      "91fb422ee203022ee143d6411366ab3ccb55d90df21a532c13214129ccc04edc"
     );
   });
 
