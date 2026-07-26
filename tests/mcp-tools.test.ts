@@ -343,7 +343,7 @@ describe("MCP tool surface", () => {
     expect(logo.byteLength).toBeLessThanOrEqual(12_000);
   });
 
-  it("uses Mora's lightweight live sans hierarchy without an embedded font", async () => {
+  it("uses Mora's lightweight live hierarchy without embedded resources", async () => {
     const html = await readFile(
       path.join(process.cwd(), "mcp-apps/simulation-results/index.html"),
       "utf8"
@@ -353,7 +353,7 @@ describe("MCP tool surface", () => {
     expect(html).toContain("--accent: #d9797f");
     expect(html).toContain('font-family: "DM Sans", -apple-system');
     expect(html).not.toContain("ui-serif");
-    expect(html).not.toContain("radial-gradient");
+    expect(html).toContain("radial-gradient(circle at 36% 30%");
     expect(html).not.toContain("fonts.googleapis.com");
     expect(html).not.toContain("@font-face");
     expect(html).not.toContain("Recoleta-Regular.otf");

@@ -13,10 +13,10 @@ describe("MCP App host-safety regression guards", () => {
     );
     const source = artifact.toString("utf8");
 
-    expect(artifact.byteLength).toBe(436_559);
+    expect(artifact.byteLength).toBe(443_344);
     expect(gzipSync(artifact).byteLength).toBeLessThanOrEqual(116_000);
     expect(createHash("sha256").update(artifact).digest("hex")).toBe(
-      "2134707e5dc5ea9237708a64b66a11a4cb2d5cb42c990f96ee9160c66a239211"
+      "418b72e556bfae3e478acf210f46b51c869719d5265d3ce04a6ca02ef50757bc"
     );
     const imageDataUrls = source.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/g) ?? [];
     expect(new Set(imageDataUrls).size).toBe(1);
@@ -54,6 +54,25 @@ describe("MCP App host-safety regression guards", () => {
     expect(html).toContain('id="error" class="state error-state" role="alert" hidden');
   });
 
+  it("animates a bounded landing-page twin cluster without host-heavy runtime work", async () => {
+    const [html, script] = await Promise.all([
+      readFile(path.join(root, "mcp-apps/simulation-results/index.html"), "utf8"),
+      readFile(path.join(root, "mcp-apps/simulation-results/main.ts"), "utf8"),
+    ]);
+
+    expect(html.match(/class="twin"/g) ?? []).toHaveLength(36);
+    expect(html).toContain("contain: layout paint");
+    expect(html).not.toContain("filter:");
+    expect(html).toContain("@media (prefers-reduced-motion: reduce), (update: slow)");
+    expect(html).toContain(".twin,");
+    expect(html).toContain("Exploring versions of you.");
+    expect(html).toContain("Mora is running possible paths in parallel");
+    expect(html).not.toContain("<canvas");
+    expect(html).not.toContain("<video");
+    expect(script).not.toMatch(/setInterval|setTimeout/);
+    expect(script.match(/requestAnimationFrame/g) ?? []).toHaveLength(1);
+  });
+
   it("keeps the authored body deterministic", async () => {
     const html = await readFile(
       path.join(root, "mcp-apps/simulation-results/index.html"),
@@ -62,7 +81,7 @@ describe("MCP App host-safety regression guards", () => {
     const body = html.slice(html.indexOf("<body>"), html.indexOf("</body>") + 7);
 
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "cc150b3ae9952784908505a6fd146eccbe575268079a5d2d6c8180c43edcbd32"
+      "0aed83734e0b7e6f6ae68dccce722ffa6dc76add410ed3e1678e8d44af6eddf3"
     );
   });
 
