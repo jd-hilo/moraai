@@ -55,7 +55,14 @@ Rules:
 - Use only facts that appear in the context. Do not state ${name}'s age, grade, or graduation year unless the context states it explicitly — never guess. Do not invent named companies, named people, or precise recurring dollar amounts; hypothetical specifics must stay generic ("a sponsor", "an accelerator").
 - Structural diversity: if the scenario weighs multiple options ("X vs Y", "instead of"), spread the ${POSSIBILITY_COUNT} paths across ALL named options, plus at least one hybrid or "neither" path. No two paths may open with the same first move, and each path's outcome should hinge on a different dominant driver (timing, money, relationships, health, location, motivation, an external shock). Do not recycle the same events or signature phrases across paths.
 - Give each a probability (0–100). All ${POSSIBILITY_COUNT} probabilities should sum to approximately 100.
-- Titles should be vivid but factual: "The Slow Build", "The Stall at Year 2", "The Unexpected Pivot" — not generic.
+- Titles are the shareable forecast headline for each path. Make each one understandable on its own, concrete enough to stop a scroll, and faithful to what actually happens in that path.
+- Title format: 4–9 words, consequence-led, and written in plain language. Preview the projected end state or decisive turning point instead of assigning an abstract archetype.
+- Prefer a grounded forecast anchor whenever the scenario supports one: projected net worth, income, savings runway, revenue, time to a milestone, role, location, relationship state, health or lifestyle outcome. Across the ${POSSIBILITY_COUNT} paths, vary the outcome dimensions instead of making every title about money.
+- Forecast numbers are allowed when they are derived from known context or explicit assumptions in that path. Use rounded figures, ranges, or directional language when exact precision is not justified. Never present an invented current fact, name, company, or falsely precise number just to make a title punchier.
+- Vary the title shapes across the ${POSSIBILITY_COUNT} paths so they do not read like a templated list. A title should still make sense if someone sees only that title in a screenshot.
+- Avoid generic labels and empty drama. Do not begin titles with "The", "Path", "Scenario", "Journey", "Future", "Outcome", or "Possibility". Do not use questions, clickbait, motivational hype, or unsupported certainty.
+- Style examples (the projected detail must be supported by that path): "Net Worth Crosses $250K by Year 5", "$18K Runway Ends Before Product-Market Fit", "Revenue Replaces Your Salary in Year 3", "A Promotion Delays the Startup Two Years", "You Move Cities and Cut Expenses 30%".
+- Bad titles: "The Slow Build", "The Unexpected Pivot", "A New Chapter", "Path 4", "Success Is Inevitable".
 - Descriptions: 2–3 sentences. What concretely happens? What's the key driver of this path?
 - Distribute realistically: most paths cluster around the median outcome; a few edge cases at either extreme.
 
