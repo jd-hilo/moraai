@@ -39,4 +39,28 @@ describe("simulation possibility generation prompt", () => {
     expect(prompt).toContain("Do not invent named companies");
     expect(prompt).toContain("never guess");
   });
+
+  it("asks for concrete, shareable titles without clickbait or invented precision", () => {
+    const prompt = buildLensGenerationPrompt(
+      "Anish",
+      "The user is weighing whether to build a company full-time.",
+      "Leave my job to build my company",
+      null,
+      5,
+      TODAY
+    );
+
+    expect(prompt).toContain("shareable forecast headline for each path");
+    expect(prompt).toContain("4–9 words, consequence-led");
+    expect(prompt).toContain("make sense if someone sees only that title in a screenshot");
+    expect(prompt).toContain("projected net worth, income, savings runway, revenue");
+    expect(prompt).toContain("Forecast numbers are allowed");
+    expect(prompt).toContain("Use rounded figures, ranges, or directional language");
+    expect(prompt).toContain("Never present an invented current fact");
+    expect(prompt).toContain('Do not begin titles with "The"');
+    expect(prompt).toContain('"Net Worth Crosses $250K by Year 5"');
+    expect(prompt).toContain('"Revenue Replaces Your Salary in Year 3"');
+    expect(prompt).toContain('Bad titles: "The Slow Build"');
+    expect(prompt).toContain("Do not use questions, clickbait, motivational hype, or unsupported certainty");
+  });
 });
