@@ -20,7 +20,6 @@ import {
   saveMemoryForUser,
 } from "@/lib/mcp/memory";
 import {
-  createSimulationForUser,
   deleteSimulationForUser,
   getSimulationForUser,
   listSimulationsForUser,
@@ -645,7 +644,7 @@ export function registerMoraTools(server: McpServer): void {
           nextAction:
             simulations.length > 0
               ? "Use get_simulation to inspect a selected simulation."
-              : "Ask what scenario the user wants to explore, then call create_simulation.",
+              : "Ask what scenario the user wants to explore, then call simulate_future.",
           simulations,
           simulationsUrl: simulationsUrl(),
         });
@@ -695,68 +694,13 @@ export function registerMoraTools(server: McpServer): void {
     }
   );
 
-  server.registerTool(
-    "create_simulation",
-    {
-      title: "Create a Mora simulation",
-      description:
-        "Create a draft future simulation and generate its possibilities for later review in Mora. For a user who asks to run a simulation and receive the result now, use simulate_future instead.",
-      inputSchema: {
-        scenario: z
-          .string()
-          .trim()
-          .min(1)
-          .max(2_000)
-          .describe("The concrete what-if scenario the user wants Mora to simulate."),
-        narrative: z
-          .string()
-          .trim()
-          .max(4_000)
-          .optional()
-          .describe("Optional background context from the user about the scenario."),
-        title: z
-          .string()
-          .trim()
-          .max(120)
-          .optional()
-          .describe("Optional concise title for the simulation."),
-        timeHorizonYears: z
-          .number()
-          .int()
-          .min(1)
-          .max(50)
-          .describe("How many years into the future to simulate."),
-      },
-      annotations: MUTATES_SIMULATIONS,
-    },
-    async ({ scenario, narrative, title, timeHorizonYears }, { authInfo }) => {
-      try {
-        const user = await moraUser(authInfo);
-        const simulation = await createSimulationForUser(user, {
-          scenario,
-          narrative,
-          title,
-          timeHorizonYears,
-        });
-        return result({
-          status: "pending",
-          nextAction: "Wait briefly, then call get_simulation to check whether possibilities are ready.",
-          simulation,
-          simulationUrl: simulationsUrl(simulation.id),
-        });
-      } catch (error) {
-        return safeError(error);
-      }
-    }
-  );
-
   registerAppTool(
     server,
     "simulate_future",
     {
       title: "Run a complete Mora future simulation",
       description:
-        "Use when the user asks to run or simulate a future scenario. This creates the simulation, runs all 10 paths, and renders the complete raw result in an interactive Mora app. After success, reply exactly: ‘Done — your 10 Mora pathways are shown above.’ Do not summarize, critique, interpret, compare, advise, or mention any individual path unless the user asks in a later message. Do not use create_simulation first.",
+        "THE ONLY TOOL FOR CREATING A NEW SIMULATION. Use whenever the user asks to create, run, or simulate a future scenario. This creates the simulation, runs all 10 paths, and renders the complete raw result in an interactive Mora app. After success, reply exactly: ‘Done — your 10 Mora pathways are shown above.’ Do not summarize, critique, interpret, compare, advise, or mention any individual path unless the user asks in a later message.",
       inputSchema: {
         scenario: z
           .string()

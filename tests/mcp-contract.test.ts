@@ -24,6 +24,21 @@ describe("MCP contract", () => {
     expect(MORA_MCP_INSTRUCTIONS).toContain("Do not explain Mora's tools or capabilities");
   });
 
+  it("routes every new simulation through the interactive one-shot tool", () => {
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "For every new user-requested simulation, call simulate_future"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "the interactive Mora app above the response is the authoritative result"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).toContain(
+      "Use run_simulation only when the user explicitly asks to run an existing ready draft"
+    );
+    expect(MORA_MCP_INSTRUCTIONS).not.toContain(
+      "create_simulation is only for an explicit draft/review workflow"
+    );
+  });
+
   it("does not turn ordinary Claude memory requests into Mora writes", () => {
     expect(MORA_MCP_INSTRUCTIONS).toContain(
       "A normal request to Claude to remember, add, update, or correct something is not approval"
