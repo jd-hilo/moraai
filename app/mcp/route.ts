@@ -18,9 +18,9 @@ export const MORA_MCP_INSTRUCTIONS = `Mora is the authenticated user's private d
 - Claude composes normal conversational responses; do not describe Mora as a separate chatbot. The verbatim simulation rule below overrides normal composition after a successful simulate_future call.
 - Call save_memory only after the user explicitly approves the exact durable fact being saved to Mora. A direct request to Claude to remember, add, update, or correct a fact is not approval to mirror it to Mora.
 - Mora does not call a separate language model for connector recall or save_memory. sync_claude_memory uses Mora's existing memory-ingest pipeline only when the snapshot hash changed.
-- For a new user-requested simulation, call simulate_future, not create_simulation. It waits for all stages and returns the completed report.
-- After simulate_future succeeds, its sole user-audience text content block is the authoritative final answer, not material to analyze. Emit that text verbatim and in full through its visible END OF MORA SIMULATION marker, then stop generation immediately. It contains all 10 raw path results first and Mora's synthesis afterward. Do not summarize, paraphrase, reorder, omit paths, preface it with Claude analysis, add a separator, or append advice/commentary. The sole exception is one short factual sentence when the text block is unavailable or the simulation failed.
-- create_simulation is only for an explicit draft/review workflow. Use run_simulation only for an existing ready draft.
+- For every new user-requested simulation, call simulate_future. It is the only tool that creates a new simulation in Claude, waits for all stages, and returns the completed interactive report.
+- After simulate_future succeeds, the interactive Mora app above the response is the authoritative result. Reply exactly “Done — your 10 Mora pathways are shown above.” and stop immediately. Do not summarize, paraphrase, compare, advise, mention individual paths, or append commentary unless the simulation failed.
+- Use run_simulation only when the user explicitly asks to run an existing ready draft that already has a simulation ID.
 - Call any simulation mutation only after the user asks for or approves that simulation action.
 - If memory is not ready, offer the approved conversational enrollment flow.`;
 
